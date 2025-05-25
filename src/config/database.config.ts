@@ -1,7 +1,7 @@
 import dotenv from "dotenv";
 dotenv.config();
 
-import { getEnvVar } from "../utils/getEnvVar.js";
+import { getEnvVar } from "../utils/getEnvVar";
 import { DBConfig, Env } from "../interfaces";
 
 const config: Record<Env, DBConfig> = {

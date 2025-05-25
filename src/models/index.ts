@@ -1,6 +1,6 @@
 import { Sequelize } from "sequelize";
-import config from "../config/database.config.js";
-import { Env } from "../interfaces/index.js";
+import config from "../config/database.config";
+import { Env } from "../interfaces/index";
 
 
 const env: Env = "development"; //static for now, can be dynamic later
