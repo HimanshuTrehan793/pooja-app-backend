@@ -1,11 +1,10 @@
 import { Sequelize } from "sequelize";
 import config from "../config/database.config";
 import { Env } from "../interfaces/index";
-
+import { Product } from "./product.model";
 
 const env: Env = "development"; //static for now, can be dynamic later
 const dbConfig = config[env];
-
 
 const sequelize = new Sequelize(
   dbConfig.database,
@@ -25,8 +24,12 @@ const sequelize = new Sequelize(
   }
 );
 
+Product.sync();
+
 // Export both Sequelize class and instance
 export default {
   Sequelize,
   sequelize,
 };
+
+export { Product };
