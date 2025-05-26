@@ -1,9 +1,11 @@
+// models/index.ts
 import { Sequelize } from "sequelize";
 import config from "../config/database.config";
 import { Env } from "../interfaces/index";
 import { Product } from "./product.model";
+import { ProductVariant } from "./productVariant.model";
 
-const env: Env = "development"; //static for now, can be dynamic later
+const env: Env = "development";
 const dbConfig = config[env];
 
 const sequelize = new Sequelize(
@@ -24,12 +26,16 @@ const sequelize = new Sequelize(
   }
 );
 
-Product.sync();
+// Initialize models
+Product.initModel(sequelize);
+ProductVariant.initModel(sequelize);
 
-// Export both Sequelize class and instance
-export default {
-  Sequelize,
+// Setup associations
+Product.associate();
+ProductVariant.associate();
+
+export const db = {
   sequelize,
+  Product,
+  ProductVariant,
 };
-
-export { Product };

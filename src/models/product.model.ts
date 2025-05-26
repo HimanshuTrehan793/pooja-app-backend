@@ -1,49 +1,53 @@
-import { Model, DataTypes } from 'sequelize';
-import { ProductVariant } from './variant.model'; // assuming this is already defined
-import  db  from './index'; // make sure this points to your Sequelize instance
+// models/product.model.ts
+import {
+  Model,
+  DataTypes,
+  InferAttributes,
+  InferCreationAttributes,
+  CreationOptional,
+  Sequelize,
+} from "sequelize";
+import { ProductVariant } from "./productVariant.model";
 
-const { sequelize } = db;
-export class Product extends Model {
-  public id!: string;
-  public out_of_stock!: boolean;
-  public default_variant_id!: string;
+export class Product extends Model<
+  InferAttributes<Product>,
+  InferCreationAttributes<Product>
+> {
+  declare id: CreationOptional<string>;
+  declare out_of_stock: boolean;
+  declare default_variant_id: string;
 
-  // Associations
-  public product_variants?: ProductVariant[];
-}
-
-Product.init(
-  {
-    id: {
-      type: DataTypes.STRING,
-      primaryKey: true,
-      allowNull: false,
-    },
-    out_of_stock: {
-      type: DataTypes.BOOLEAN,
-      allowNull: false,
-    },
-    default_variant_id: {
-      type: DataTypes.STRING,
-      allowNull: false,
-    },
-  },
-  {
-    sequelize,
-    modelName: 'Product',
-    tableName: 'products',
-    timestamps: true, // add if you're not using createdAt/updatedAt
+  static initModel(sequelize: Sequelize) {
+    Product.init(
+      {
+        id: {
+          type: DataTypes.UUID,
+          defaultValue: DataTypes.UUIDV4,
+          primaryKey: true,
+          allowNull: false,
+        },
+        out_of_stock: {
+          type: DataTypes.BOOLEAN,
+          allowNull: false,
+        },
+        default_variant_id: {
+          type: DataTypes.STRING,
+          allowNull: false,
+        },
+      },
+      {
+        sequelize,
+        tableName: "products",
+        timestamps: true,
+      }
+    );
   }
-);
 
-Product.hasMany(ProductVariant, {
-  foreignKey: 'product_id',
-  as: 'product_variants',
-});
-
-ProductVariant.belongsTo(Product, {
-  foreignKey: 'product_id',
-  as: 'product',
-});
-
-
+  static associate() {
+    Product.hasMany(ProductVariant, {
+      foreignKey: "product_id",
+      as: "product_variants",
+      onDelete: "CASCADE",
+    });
+  }
+}
