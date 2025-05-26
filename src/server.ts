@@ -2,6 +2,9 @@ import express, { Request, Response } from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import { db } from "./models";
+import { corsOptions } from "./config/cors.config";
+
+import productRoutes from './routes/product.route'
 
 dotenv.config();
 
@@ -9,9 +12,11 @@ const app = express();
 const PORT = process.env.PORT || 8080;
 
 // CORS setup
-app.use(cors({ origin: "http://localhost:8081" }));
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+app.use("/api/product",productRoutes)
 
 // Basic route
 app.get("/", (_req: Request, res: Response) => {
@@ -25,6 +30,7 @@ async function startServer() {
     console.log("✅ Database connected.");
 
     await db.sequelize.sync(); // sync all models
+
     console.log("✅ Database synced.");
 
     app.listen(PORT, () => {
