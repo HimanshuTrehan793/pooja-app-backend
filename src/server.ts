@@ -1,24 +1,37 @@
-import express, { Request, Response } from "express";
-import cors from "cors";
 import dotenv from "dotenv";
-import { db } from "./models";
-
 dotenv.config();
 
-const app = express();
-const PORT = process.env.PORT || 8080;
+import express from "express";
+import cors from "cors";
+import { db } from "./models";
+import authRoutes from "./routes/auth.routes";
+import { getEnvVar } from "./utils/getEnvVar";
+import { errorHandler } from "./middlewares/errorHandler";
 
-// CORS setup
+
+const app = express();
+const PORT = getEnvVar("PORT");
+
 app.use(cors({ origin: "http://localhost:8081" }));
+
+// Body parsers
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Basic route
-app.get("/", (_req: Request, res: Response) => {
-  res.json({ message: "Welcome to the pooja-samagari backend." });
-});
+app.use("/auth", authRoutes);
 
-// Start server and DB
+// app.all("*", (req: Request, res: Response, next: NextFunction) => {
+//   return next(
+//     new ApiError(
+//       `Route not found: ${req.originalUrl}`,
+//       HttpStatusCode.NOT_FOUND,
+//       "Not Found"
+//     )
+//   );
+// });
+
+app.use(errorHandler);
+
 async function startServer() {
   try {
     await db.sequelize.authenticate();

@@ -4,6 +4,8 @@ import config from "../config/database.config";
 import { Env } from "../interfaces/index";
 import { Product } from "./product.model";
 import { ProductVariant } from "./productVariant.model";
+import { User } from "./user.model";
+import { Otp } from "./otp.model";
 
 const env: Env = "development";
 const dbConfig = config[env];
@@ -29,10 +31,14 @@ const sequelize = new Sequelize(
 // Initialize models
 Product.initModel(sequelize);
 ProductVariant.initModel(sequelize);
+User.initModel(sequelize);
+Otp.initModel(sequelize);
 
 // Setup associations
 Product.associate();
 ProductVariant.associate();
+User.associate();
+Otp.associate();
 
 export const db = {
   sequelize,
