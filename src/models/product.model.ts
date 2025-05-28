@@ -15,7 +15,6 @@ export class Product extends Model<
 > {
   declare id: CreationOptional<string>;
   declare out_of_stock: boolean;
-  declare default_variant_id: string;
 
   static initModel(sequelize: Sequelize) {
     Product.init(
@@ -28,10 +27,6 @@ export class Product extends Model<
         },
         out_of_stock: {
           type: DataTypes.BOOLEAN,
-          allowNull: false,
-        },
-        default_variant_id: {
-          type: DataTypes.STRING,
           allowNull: false,
         },
       },

@@ -17,9 +17,15 @@ export const MESSAGES = {
 
     // PRODUCTS
     GET_ALL_PRODUCTS: "Products retrieved successfully",
+    NO_PRODUCTS_FOUND: "No Product Found",
     CREATE_PRODUCTS: "Product created successfully",
     UPDATE_PRODUCTS: "Product updated successfully",
     DELETE_PRODUCTS: "Product deleted successfully",
+
+    // PRODUCTS
+    CREATE_PRODUCT_VARIANT: "Product Variant created successfully",
+    UPDATE_PRODUCT_VARIANT: "Product Variant updated successfully",
+    DELETE_PRODUCT_VARIANT: "Product Variant deleted successfully",
 
     // PROMOCODES
     GET_ALL_PROMOCODES: "PromoCodes retrieved successfully",

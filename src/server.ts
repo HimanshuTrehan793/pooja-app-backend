@@ -9,7 +9,10 @@ import { getEnvVar } from "./utils/getEnvVar";
 import { errorHandler } from "./middlewares/errorHandler";
 
 import { corsOptions } from "./config/cors.config";
-import productRoutes from './routes/product.route'
+import productRoutes from "./routes/product.route";
+import categoryRoutes from './routes/category.route'
+import productVariantRoutes  from './routes/product_variant.route'
+import SubCategoryRoutes from "./routes/subcategory.route"
 
 
 const app = express();
@@ -20,7 +23,13 @@ app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.use("/api/product",productRoutes)
+app.use("/api/product", productRoutes);
+
+app.use("/api/category",categoryRoutes);
+
+app.use("/api/productVariant",productVariantRoutes)
+
+app.use("/api/subCategories",SubCategoryRoutes)
 app.use("/auth", authRoutes);
 
 // app.all("*", (req: Request, res: Response, next: NextFunction) => {

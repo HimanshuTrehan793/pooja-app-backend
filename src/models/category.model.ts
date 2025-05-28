@@ -15,7 +15,7 @@ export class Category extends Model<
   declare id: CreationOptional<string>;
   declare name: string;
   declare image: string;
-  declare parent_id: CreationOptional<string>;
+  declare parent_id: CreationOptional<string> | null;
 
   static initModel(sequelize: Sequelize) {
     Category.init(

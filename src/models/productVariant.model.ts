@@ -16,7 +16,7 @@ export class ProductVariant extends Model<
   InferAttributes<ProductVariant>,
   InferCreationAttributes<ProductVariant>
 > {
-  declare id: string;
+  declare id: CreationOptional<string>;
   declare product_id: ForeignKey<Product["id"]>;
   declare display_label: string;
   declare name: string;
@@ -26,6 +26,7 @@ export class ProductVariant extends Model<
   declare image: string[];
   declare brand_name: string;
   declare out_of_stock: boolean;
+  declare default_variant: boolean;
   declare min_quantity: CreationOptional<number>;
   declare max_quantity: CreationOptional<number>;
   declare total_available_quantity: number;
@@ -75,9 +76,14 @@ export class ProductVariant extends Model<
           type: DataTypes.BOOLEAN,
           allowNull: false,
         },
+        default_variant: {
+          type: DataTypes.BOOLEAN,
+          allowNull: false,
+        },
         min_quantity: {
           type: DataTypes.INTEGER,
-          allowNull: true,
+          allowNull: false,
+          defaultValue: 1,
         },
         max_quantity: {
           type: DataTypes.INTEGER,
@@ -104,10 +110,10 @@ export class ProductVariant extends Model<
     });
 
     ProductVariant.belongsToMany(Category, {
-    through: "product_variant_categories",
-    foreignKey: "product_variant_id",
-    otherKey: "category_id",
-    as: "categories",
-  });
+      through: "product_variant_categories",
+      foreignKey: "product_variant_id",
+      otherKey: "category_id",
+      as: "categories",
+    });
   }
 }
