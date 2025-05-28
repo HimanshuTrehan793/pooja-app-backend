@@ -10,6 +10,7 @@ import {
   NonAttribute,
 } from "sequelize";
 import { Product } from "./product.model";
+import { Category } from "./category.model";
 
 export class ProductVariant extends Model<
   InferAttributes<ProductVariant>,
@@ -101,5 +102,12 @@ export class ProductVariant extends Model<
       onDelete: "CASCADE",
       as: "product",
     });
+
+    ProductVariant.belongsToMany(Category, {
+    through: "product_variant_categories",
+    foreignKey: "product_variant_id",
+    otherKey: "category_id",
+    as: "categories",
+  });
   }
 }

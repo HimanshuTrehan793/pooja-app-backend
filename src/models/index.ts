@@ -6,6 +6,7 @@ import { Product } from "./product.model";
 import { ProductVariant } from "./productVariant.model";
 import { User } from "./user.model";
 import { Otp } from "./otp.model";
+import { Category } from "./category.model";
 
 const env: Env = "development";
 const dbConfig = config[env];
@@ -33,12 +34,14 @@ Product.initModel(sequelize);
 ProductVariant.initModel(sequelize);
 User.initModel(sequelize);
 Otp.initModel(sequelize);
+Category.initModel(sequelize);
 
 // Setup associations
 Product.associate();
 ProductVariant.associate();
 User.associate();
 Otp.associate();
+Category.associate();
 
 export const db = {
   sequelize,
