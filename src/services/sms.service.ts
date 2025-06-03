@@ -1,5 +1,3 @@
-// src/services/sms.service.ts
-
 import { Twilio } from "twilio";
 import { getEnvVar } from "../utils/getEnvVar";
 import { HttpStatusCode } from "../constants/httpStatusCodes";
@@ -20,9 +18,17 @@ export async function sendSMS(to: string, message: string): Promise<string> {
     });
 
     return response.sid;
-  } catch (error) {
+  } catch (error: unknown) {
+    const errorMessage =
+      typeof error === "object" &&
+      error !== null &&
+      "message" in error &&
+      typeof (error as any).message === "string"
+        ? (error as { message: string }).message
+        : "Failed to send SMS.";
+
     throw new ApiError(
-      "SMS service failed",
+      errorMessage,
       HttpStatusCode.INTERNAL_SERVER_ERROR,
       "Twilio Error"
     );

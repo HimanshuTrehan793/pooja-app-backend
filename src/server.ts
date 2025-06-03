@@ -3,17 +3,18 @@ dotenv.config();
 
 import express from "express";
 import cors from "cors";
+import cookieParser from "cookie-parser";
+
 import { db } from "./models";
-import authRoutes from "./routes/auth.routes";
-import { getEnvVar } from "./utils/getEnvVar";
-import { errorHandler } from "./middlewares/errorHandler";
 
 import { corsOptions } from "./config/cors.config";
-import productRoutes from "./routes/product.route";
-import categoryRoutes from './routes/category.route'
-import productVariantRoutes  from './routes/product_variant.route'
-import SubCategoryRoutes from "./routes/subcategory.route"
 
+import { getEnvVar } from "./utils/getEnvVar";
+
+import { errorHandler } from "./middlewares/errorHandler";
+import { jsonSyntaxErrorHandler } from "./middlewares/jsonSyntaxErrorHandler";
+
+import routes from "./routes";
 
 const app = express();
 const PORT = getEnvVar("PORT");
@@ -21,26 +22,11 @@ const PORT = getEnvVar("PORT");
 // CORS setup
 app.use(cors(corsOptions));
 app.use(express.json());
+app.use(jsonSyntaxErrorHandler);
+app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
 
-app.use("/api/product", productRoutes);
-
-app.use("/api/category",categoryRoutes);
-
-app.use("/api/productVariant",productVariantRoutes)
-
-app.use("/api/subCategories",SubCategoryRoutes)
-app.use("/auth", authRoutes);
-
-// app.all("*", (req: Request, res: Response, next: NextFunction) => {
-//   return next(
-//     new ApiError(
-//       `Route not found: ${req.originalUrl}`,
-//       HttpStatusCode.NOT_FOUND,
-//       "Not Found"
-//     )
-//   );
-// });
+app.use(routes);
 
 app.use(errorHandler);
 
@@ -49,7 +35,7 @@ async function startServer() {
     await db.sequelize.authenticate();
     console.log("✅ Database connected.");
 
-    await db.sequelize.sync();
+    await db.sequelize.sync({ force: true });
     console.log("✅ Database synced.");
 
     app.listen(PORT, () => {

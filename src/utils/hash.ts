@@ -1,5 +1,14 @@
-import crypto from "crypto";
+import bcrypt from "bcrypt";
 
-export function hashOtp(otp: string): string {
-  return crypto.createHash("sha256").update(otp).digest("hex");
+const SALT_ROUNDS = 10;
+
+export async function hashOtp(otp: string): Promise<string> {
+  return bcrypt.hash(otp, SALT_ROUNDS);
+}
+
+export async function compareOtp(
+  plainOtp: string,
+  hashedOtp: string
+): Promise<boolean> {
+  return bcrypt.compare(plainOtp, hashedOtp);
 }

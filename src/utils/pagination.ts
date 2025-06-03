@@ -4,6 +4,7 @@ export interface PaginationResult {
   currentPage: number;
   nextPage?: number;
   prevPage?: number;
+  pageSize: number;
 }
 
 export function calculatePagination(
@@ -15,14 +16,12 @@ export function calculatePagination(
   const hasNextPage = page < totalPages;
   const hasPrevPage = page > 1;
 
-  const nextPage = hasNextPage ? page + 1 : undefined;
-  const prevPage = hasPrevPage ? page - 1 : undefined;
-
   return {
     totalItems: count,
     totalPages,
     currentPage: page,
-    nextPage,
-    prevPage,
+    pageSize,
+    nextPage: hasNextPage ? page + 1 : undefined,
+    prevPage: hasPrevPage ? page - 1 : undefined,
   };
 }

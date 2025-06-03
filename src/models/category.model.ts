@@ -42,7 +42,7 @@ export class Category extends Model<
       },
       {
         sequelize,
-        tableName: "categories", // Fixed from "products"
+        tableName: "categories",
         timestamps: true,
       }
     );
@@ -57,9 +57,9 @@ export class Category extends Model<
     Category.hasMany(Category, {
       foreignKey: "parent_id",
       as: "children",
+      onDelete: "CASCADE", 
     });
 
-    // NEW: Many-to-many with ProductVariant
     Category.belongsToMany(ProductVariant, {
       through: "product_variant_categories",
       foreignKey: "category_id",

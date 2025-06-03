@@ -39,8 +39,6 @@ Category.initModel(sequelize);
 // Setup associations
 Product.associate();
 ProductVariant.associate();
-User.associate();
-Otp.associate();
 Category.associate();
 
 export const db = {

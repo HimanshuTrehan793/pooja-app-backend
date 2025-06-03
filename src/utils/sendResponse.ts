@@ -5,10 +5,13 @@ interface SendResponseParams<T> {
   statusCode?: number;
   message: string;
   data?: T;
-  pagination?: {
-    totalItems: number;
-    totalPages: number;
+  meta?: {
+    totalItems: number; 
+    totalPages: number; 
     currentPage: number;
+    nextPage?: number;
+    prevPage?: number;
+    pageSize: number;
   };
 }
 
@@ -17,7 +20,7 @@ export function sendResponse<T>({
   statusCode = 200,
   message,
   data,
-  pagination,
+  meta,
 }: SendResponseParams<T>) {
   const responseBody: any = {
     success: true,
@@ -28,8 +31,8 @@ export function sendResponse<T>({
     responseBody.data = data;
   }
 
-  if (pagination !== undefined && pagination !== null) {
-    responseBody.pagination = pagination;
+  if (meta !== undefined && meta !== null) {
+    responseBody.meta = meta;
   }
 
   return res.status(statusCode).json(responseBody);

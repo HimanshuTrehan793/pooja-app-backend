@@ -4,7 +4,7 @@ import { getEnvVar } from "../utils/getEnvVar";
 
 const allowedOrigins: string[] = getEnvVar("ALLOWED_ORIGINS")
   .split(",")
-  .map(origin => origin.trim())
+  .map((origin) => origin.trim())
   .filter(Boolean);
 
 export const corsOptions: CorsOptionsDelegate<Request> = (req, callback) => {
@@ -14,7 +14,7 @@ export const corsOptions: CorsOptionsDelegate<Request> = (req, callback) => {
   const isDomainAllowed = allowedOrigins.includes(origin);
 
   if (isDomainAllowed) {
-    corsOptions = { origin: true };
+    corsOptions = { origin: true, credentials: true };
   } else {
     corsOptions = { origin: false };
   }

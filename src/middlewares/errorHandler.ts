@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction, ErrorRequestHandler } from "express";
+import { Request, Response, NextFunction } from "express";
 import { ApiError } from "../utils/apiError";
 import { getEnvVar } from "../utils/getEnvVar";
 import { HttpStatusCode } from "../constants/httpStatusCodes";
@@ -14,6 +14,7 @@ export const errorHandler = (
       success: err.success,
       message: err.message,
       error: err.error,
+      ...(err.details && { details: err.details }),
       ...(getEnvVar("NODE_ENV") === "development" && { stack: err.stack }),
     });
     return;

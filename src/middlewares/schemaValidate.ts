@@ -1,23 +1,56 @@
 import { Request, Response, NextFunction } from "express";
-import { Schema, ValidationErrorItem } from "joi";
+import { ZodSchema } from "zod";
+import { ApiError } from "../utils/apiError";
+import { HttpStatusCode } from "../constants/httpStatusCodes";
 
-interface ValidationError {
-  message: string;
-  path?: (string | number)[];
-  type?: string;
-  context?: Record<string, any>;
-}
+export const schemaValidate =
+  <T>(schema: ZodSchema<T>, source: "body" | "query" | "params" = "body") =>
+  async (req: Request, _res: Response, next: NextFunction): Promise<void> => {
+    const raw =
+      source === "query"
+        ? req.query
+        : source === "params"
+        ? req.params
+        : req.body;
 
-export const schemaValidate = (schema: Schema) => {
-  return async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const validated = await schema.validateAsync(req.body);
-      req.body = validated;
-      next();
-    } catch (err: any) {
-      console.error(err);
-      const errors: ValidationError[] = err.details || [];
-      next({ errors, status: 400 });
+    if (raw === null || raw === undefined || typeof raw !== "object") {
+      return next(
+        new ApiError(
+          `Request ${source} is missing or not a valid object`,
+          HttpStatusCode.BAD_REQUEST,
+          "Validation Error"
+        )
+      );
     }
+
+    const result = await schema.safeParseAsync(raw);
+
+    if (!result.success) {
+      const details = result.error.errors.map((err) => ({
+        field: err.path.length > 0 ? err.path.join(".") : source,
+        message: err.message,
+      }));
+
+      return next(
+        new ApiError(
+          "Validation failed",
+          HttpStatusCode.BAD_REQUEST,
+          "Validation Error",
+          details
+        )
+      );
+    }
+
+    switch (source) {
+      case "query":
+        Object.assign(req.query, result.data);
+        break;
+      case "params":
+        Object.assign(req.params, result.data);
+        break;
+      default:
+        Object.assign(req.body, result.data);
+    }
+
+    next();
   };
-};

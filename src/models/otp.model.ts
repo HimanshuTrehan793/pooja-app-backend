@@ -56,8 +56,4 @@ export class Otp extends Model<
       }
     );
   }
-
-  static associate() {
-    Otp.belongsTo(User, { foreignKey: "user_id", as: "user" });
-  }
 }

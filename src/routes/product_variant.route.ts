@@ -3,7 +3,7 @@ import {
   createVariant,
   deleteVariant,
   updateVariant,
-} from "../controller/product_variant.controller";
+} from "../controllers/product_variant.controller";
 
 const router = express.Router();
 

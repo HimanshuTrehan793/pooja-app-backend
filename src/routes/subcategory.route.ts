@@ -1,26 +1,26 @@
-import express from "express";
-import {
-  createSubCategory,
-  deleteSubCategory,
-  getAllSubCategories,
-  getAllSubCategoryById,
-  updateSubCategory,
-} from "../controller/subcategory.controller";
-import { schemaValidate } from "../middlewares/schemaValidate";
-import { subCategoryValidation } from "../validations/category.validation";
+// import express from "express";
+// import {
+//   createSubCategory,
+//   deleteSubCategory,
+//   getAllSubCategories,
+//   getAllSubCategoryById,
+//   updateSubCategory,
+// } from "../controllers/subcategory.controller";
+// import { schemaValidate } from "../middlewares/schemaValidate";
+// import { subCategoryValidation } from "../validations/category.validation";
 
-const router = express.Router();
+// const router = express.Router();
 
-router
-  .route("/")
-  .get(getAllSubCategories)
-  .post(schemaValidate(subCategoryValidation), createSubCategory);
+// router
+//   .route("/")
+//   .get(getAllSubCategories)
+//   .post(schemaValidate(subCategoryValidation), createSubCategory);
 
-// Routes for "/:id"
-router
-  .route("/:id")
-  .get(getAllSubCategoryById)
-  .put(updateSubCategory)
-  .delete(deleteSubCategory);
+// // Routes for "/:id"
+// router
+//   .route("/:id")
+//   .get(getAllSubCategoryById)
+//   .put(updateSubCategory)
+//   .delete(deleteSubCategory);
 
-export default router;
+// export default router;

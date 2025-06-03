@@ -18,7 +18,7 @@ export class User extends Model<
   declare last_name: CreationOptional<string>;
   declare gender: CreationOptional<string>;
   declare email: CreationOptional<string>;
-  declare refresh_token: CreationOptional<string>;
+  declare refresh_token: CreationOptional<string | null>;
 
   static initModel(sequelize: Sequelize) {
     User.init(
@@ -38,7 +38,7 @@ export class User extends Model<
         },
         first_name: {
           type: DataTypes.STRING,
-          allowNull: false,
+          allowNull: true,
         },
         last_name: {
           type: DataTypes.STRING,
@@ -56,7 +56,7 @@ export class User extends Model<
           },
         },
         refresh_token: {
-          type: DataTypes.STRING,
+          type: DataTypes.TEXT,
           allowNull: true,
         },
       },
@@ -69,9 +69,5 @@ export class User extends Model<
         indexes: [{ fields: ["phone_number"] }, { fields: ["email"] }],
       }
     );
-  }
-
-  static associate() {
-    User.hasOne(Otp, { foreignKey: "user_id", as: "otp" });
   }
 }

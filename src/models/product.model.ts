@@ -14,7 +14,6 @@ export class Product extends Model<
   InferCreationAttributes<Product>
 > {
   declare id: CreationOptional<string>;
-  declare out_of_stock: boolean;
 
   static initModel(sequelize: Sequelize) {
     Product.init(
@@ -23,10 +22,6 @@ export class Product extends Model<
           type: DataTypes.UUID,
           defaultValue: DataTypes.UUIDV4,
           primaryKey: true,
-          allowNull: false,
-        },
-        out_of_stock: {
-          type: DataTypes.BOOLEAN,
           allowNull: false,
         },
       },

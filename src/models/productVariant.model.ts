@@ -18,8 +18,8 @@ export class ProductVariant extends Model<
 > {
   declare id: CreationOptional<string>;
   declare product_id: ForeignKey<Product["id"]>;
-  declare display_label: string;
   declare name: string;
+  declare display_label: string;
   declare description: string;
   declare mrp: number;
   declare price: number;
@@ -30,6 +30,10 @@ export class ProductVariant extends Model<
   declare min_quantity: CreationOptional<number>;
   declare max_quantity: CreationOptional<number>;
   declare total_available_quantity: number;
+
+  declare setCategories: (categories: string[] | Category[]) => Promise<void>;
+  declare addCategories: (categories: string[] | Category[]) => Promise<void>;
+  declare getCategories: () => Promise<Category[]>;
 
   static initModel(sequelize: Sequelize) {
     ProductVariant.init(
