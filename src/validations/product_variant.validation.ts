@@ -37,7 +37,6 @@ export const updateProductVariantSchema = z
     category_ids: z.array(z.string().uuid()),
   })
   .partial()
-  .strict()
   .transform((data) => {
     const out_of_stock = data.out_of_stock ?? false;
     const min_quantity = out_of_stock
