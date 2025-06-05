@@ -5,9 +5,9 @@ import { HttpStatusCode } from "../constants/httpStatusCodes";
 
 export const errorHandler = (
   err: Error,
-  req: Request,
+  _req: Request,
   res: Response,
-  next: NextFunction
+  _next: NextFunction
 ): void => {
   if (err instanceof ApiError) {
     res.status(err.statusCode).json({

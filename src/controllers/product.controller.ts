@@ -64,7 +64,7 @@ export const getAllProducts = async (
 
   const meta = calculatePagination(count, Number(page), Number(limit));
 
-  return sendResponse({
+  sendResponse({
     res,
     message: "Products with variants fetched successfully",
     data: products,
