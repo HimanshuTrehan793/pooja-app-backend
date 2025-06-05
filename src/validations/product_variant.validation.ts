@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { productVariantSchema } from "./product.validation";
 import { validateCategoryIds } from "../utils/validateCategoryIds";
 
 export const createProductVariantSchema = z

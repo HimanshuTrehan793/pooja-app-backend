@@ -1,166 +1,129 @@
 import { Request, Response } from "express";
 
 import { Op, where, WhereOptions } from "sequelize";
-import { Product } from "../models/product.model";
-import { ProductVariant } from "../models/productVariant.model";
-import { Category } from "../models/category.model";
 import { HTTP_STATUS_CODES } from "../constants/httpsStatusCodes";
 import { MESSAGES } from "../constants/messages";
 import { calculatePagination } from "../utils/pagination";
+import { db } from "../models";
+import {
+  CategoryIdParam,
+  CategoryQueryParams,
+} from "../validations/category.validation";
+import { sendResponse } from "../utils/sendResponse";
+import { ApiError } from "../utils/apiError";
 
 export async function getAllCategories(req: Request, res: Response) {
-  try {
-    const categories = await Category.findAndCountAll({
-      where: {
-        parent_id: {
-          [Op.is]: null,
-        },
-      },
-    });
+  const { page, limit, q } = req.query as unknown as CategoryQueryParams;
+  const where: WhereOptions = {
+    parent_id: { [Op.is]: null },
+    ...(q && { name: { [Op.iLike]: `%${q}%` } }),
+  };
+  const { count, rows: categories } = await db.Category.findAndCountAll({
+    where,
+    offset: ((Number(page) || 1) - 1) * (Number(limit) || 10),
+    limit: Number(limit) || 10,
+  });
 
-    if (!categories) {
-      res.status(HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR).json({
-        status: HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR,
-        message: MESSAGES.ERROR,
-      });
-    } else {
-      res.status(HTTP_STATUS_CODES.OK).json({
-        status: HTTP_STATUS_CODES.OK,
-        message: MESSAGES.SUCCESS.GET_ALL_CATEGORIES,
-        data: categories,
-      });
-    }
-  } catch (error) {
-    console.error(error);
-    res.status(HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR).json({
-      status: HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR,
-      message: MESSAGES.ERROR,
-    });
-  }
-}
+  const meta = calculatePagination(count, Number(page), Number(limit));
 
-export async function getAllCategoryById(req: Request, res: Response) {
-  try {
-    const categoryId = req.params.id;
-    const categories = await Category.findOne({
-      where: {
-        id: categoryId,
-      },
+  if (!categories) {
+    sendResponse({
+      res,
+      message: "Categories Not Found",
+      data: [],
+      meta,
     });
-
-    if (!categories) {
-      res.status(HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR).json({
-        status: HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR,
-        message: MESSAGES.ERROR,
-      });
-    } else {
-      res.status(HTTP_STATUS_CODES.OK).json({
-        status: HTTP_STATUS_CODES.OK,
-        message: MESSAGES.SUCCESS.GET_ALL_CATEGORIES,
-        data: categories,
-      });
-    }
-  } catch (error) {
-    console.error(error);
-    res.status(HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR).json({
-      status: HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR,
-      message: MESSAGES.ERROR,
+  } else {
+    sendResponse({
+      res,
+      message: "Categories fetched successfully",
+      data: categories,
+      meta,
     });
   }
 }
 
 export async function createCategory(req: Request, res: Response) {
-  try {
-    let { name, image } = req.body;
+  let { name, image } = req.body;
 
-    const category = await Category.create({
-      name: name,
-      image: image,
+  const category = await db.Category.create({
+    name: name,
+    image: image,
+  });
+
+  if (!category) {
+    sendResponse({
+      res,
+      message: "Category creation failed",
     });
-
-    if (!category) {
-      res.status(HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR).json({
-        status: HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR,
-        message: MESSAGES.ERROR,
-      });
-    } else {
-      res.status(HTTP_STATUS_CODES.OK).json({
-        status: HTTP_STATUS_CODES.OK,
-        message: MESSAGES.SUCCESS,
-        data: category,
-      });
-    }
-  } catch (error) {
-    console.error(error);
     res.status(HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR).json({
       status: HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR,
       message: MESSAGES.ERROR,
+    });
+  } else {
+    sendResponse({
+      res,
+      message: "Category created successfully",
+      data: category,
     });
   }
 }
 
 export async function deleteCategory(req: Request, res: Response) {
-  try {
-    const categoryId = req.params.id;
+  const { id } = req.params as CategoryIdParam;
 
-    const category = Category.destroy({
-      where: {
-        id: categoryId,
-      },
+  const category = db.Category.destroy({
+    where: {
+      id: id,
+    },
+  });
+
+  if (!category) {
+    sendResponse({
+      res,
+      message: "Category Not found",
+      statusCode: HTTP_STATUS_CODES.NOT_FOUND,
     });
-
-    if (!category) {
-      res.status(HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR).json({
-        status: HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR,
-        message: MESSAGES.ERROR,
-      });
-    } else {
-      res.status(HTTP_STATUS_CODES.OK).json({
-        status: HTTP_STATUS_CODES.OK,
-        message: MESSAGES.SUCCESS.DELETE_CATEGORY,
-      });
-    }
-  } catch (error) {
-    console.error(error);
-    res.status(HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR).json({
-      status: HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR,
-      message: MESSAGES.ERROR,
+  } else {
+    sendResponse({
+      res,
+      message: "Category delted successfully",
     });
   }
 }
 
 export async function updateCategory(req: Request, res: Response) {
-  try {
-    let { name, image, categoryId } = req.body;
+  const { id } = req.params as CategoryIdParam;
 
-    const category = Category.update(
-      {
-        name: name,
-        image: image,
-      },
-      {
-        where: {
-          id: categoryId,
-        },
-      }
-    );
+  let { name, image } = req.body;
+
+  const [affectedCount] = await db.Category.update(
+    { name, image },
+    { where: { id } }
+  );
+
+  if (affectedCount === 0) {
+    // Nothing was updated
+    sendResponse({
+      res,
+      message: "Category Not Found",
+      statusCode: HTTP_STATUS_CODES.NOT_FOUND,
+    });
+  } else {
+    const category = await db.Category.findByPk(id);
 
     if (!category) {
-      res.status(HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR).json({
-        status: HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR,
-        message: MESSAGES.ERROR,
+      sendResponse({
+        res,
+        message: "Category Updation failed",
+        statusCode: HTTP_STATUS_CODES.NOT_FOUND,
       });
     } else {
-      res.status(HTTP_STATUS_CODES.OK).json({
-        status: HTTP_STATUS_CODES.OK,
-        message: MESSAGES.SUCCESS.UPDATE_CATEGORY,
+      sendResponse({
+        res,
+        message: "Category Updated successfully",
+        data: category,
       });
     }
-  } catch (error) {
-    console.error(error);
-    res.status(HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR).json({
-      status: HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR,
-      message: MESSAGES.ERROR,
-    });
   }
 }

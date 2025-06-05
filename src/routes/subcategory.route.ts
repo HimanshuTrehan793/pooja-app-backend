@@ -1,26 +1,30 @@
-// import express from "express";
-// import {
-//   createSubCategory,
-//   deleteSubCategory,
-//   getAllSubCategories,
-//   getAllSubCategoryById,
-//   updateSubCategory,
-// } from "../controllers/subcategory.controller";
-// import { schemaValidate } from "../middlewares/schemaValidate";
-// import { subCategoryValidation } from "../validations/category.validation";
+import express from "express";
+import {
+  createSubCategory,
+  deleteSubCategory,
+  getSubCategoriesById,
+  getSubCategoryById,
+  updateSubCategory,
+} from "../controllers/subcategory.controller";
+import { schemaValidate } from "../middlewares/schemaValidate";
+import { categoryValidation } from "../validations/category.validation";
+import { catchAsync } from "../utils/catchAsync";
 
-// const router = express.Router();
+const router = express.Router();
 
-// router
-//   .route("/")
-//   .get(getAllSubCategories)
-//   .post(schemaValidate(subCategoryValidation), createSubCategory);
+router
+  .route("/")
+  .post(schemaValidate(categoryValidation), catchAsync(createSubCategory));
 
-// // Routes for "/:id"
-// router
-//   .route("/:id")
-//   .get(getAllSubCategoryById)
-//   .put(updateSubCategory)
-//   .delete(deleteSubCategory);
+ router.route("/subCategoryList/:id").get(catchAsync(getSubCategoryById)) 
 
-// export default router;
+// Routes for "/:id"
+router
+  .route("/:id")
+  .get(getSubCategoriesById)
+  .patch(catchAsync(updateSubCategory))
+  .delete(catchAsync(deleteSubCategory));
+
+  
+
+export default router;

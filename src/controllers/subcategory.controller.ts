@@ -1,166 +1,144 @@
 import { Request, Response } from "express";
 
-import { Op, where, WhereOptions } from "sequelize";
-import { Product } from "../models/product.model";
-import { ProductVariant } from "../models/productVariant.model";
-import { Category } from "../models/category.model";
+import { Op, WhereOptions } from "sequelize";
+
 import { HTTP_STATUS_CODES } from "../constants/httpsStatusCodes";
-import { MESSAGES } from "../constants/messages";
 import { calculatePagination } from "../utils/pagination";
+import { db } from "../models";
+import {
+  CategoryIdParam,
+  CategoryQueryParams,
+} from "../validations/category.validation";
+import { sendResponse } from "../utils/sendResponse";
 
-export async function getAllSubCategories(req: Request, res: Response) {
-  try {
-    const subCategories = await Category.findAndCountAll({
-      where: {
-        parent_id: {
-          [Op.not]: null,
-        },
-      },
+
+
+export async function getSubCategoriesById(req: Request, res: Response) {
+  const { id } = req.params as CategoryIdParam;
+  const subCategories = await db.Category.findAndCountAll({
+    where: {
+      parent_id: id,
+    },
+  });
+
+  if (!subCategories) {
+    sendResponse({
+      res,
+      message: "Sub Category Not found",
+      statusCode: HTTP_STATUS_CODES.NOT_FOUND,
     });
-
-    if (!subCategories) {
-      res.status(HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR).json({
-        status: HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR,
-        message: MESSAGES.ERROR,
-      });
-    } else {
-      res.status(HTTP_STATUS_CODES.OK).json({
-        status: HTTP_STATUS_CODES.OK,
-        message: MESSAGES.SUCCESS.GET_ALL_SUBCATEGORIES,
-        data: subCategories,
-      });
-    }
-  } catch (error) {
-    console.error(error);
-    res.status(HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR).json({
-      status: HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR,
-      message: MESSAGES.ERROR,
+  } else {
+    sendResponse({
+      res,
+      message: "Sub Categories Fetched Successfully",
+      data: subCategories,
     });
   }
 }
 
-export async function getAllSubCategoryById(req: Request, res: Response) {
-  try {
-    const categoryId = req.params.id;
-    const subCategories = await Category.findAndCountAll({
-      where: {
-        parent_id: categoryId,
-      },
-    });
 
-    if (!subCategories) {
-      res.status(HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR).json({
-        status: HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR,
-        message: MESSAGES.ERROR,
-      });
-    } else {
-      res.status(HTTP_STATUS_CODES.OK).json({
-        status: HTTP_STATUS_CODES.OK,
-        message: MESSAGES.SUCCESS.GET_ALL_SUBCATEGORIES,
-        data: subCategories,
-      });
-    }
-  } catch (error) {
-    console.error(error);
-    res.status(HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR).json({
-      status: HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR,
-      message: MESSAGES.ERROR,
+export async function getSubCategoryById(req: Request, res: Response) {
+  const { id } = req.params as CategoryIdParam;
+  const subCategories = await db.Category.findOne({
+    where: {
+      parent_id: id,
+    },
+  });
+
+  if (!subCategories) {
+    sendResponse({
+      res,
+      message: "Sub Category Not found",
+      statusCode: HTTP_STATUS_CODES.NOT_FOUND,
+    });
+  } else {
+    sendResponse({
+      res,
+      message: "Sub Categories Fetched Successfully",
+      data: subCategories,
     });
   }
 }
 
 export async function createSubCategory(req: Request, res: Response) {
-  try {
-    let { categoryId, name, image } = req.body;
+  let { name, image, categoryId } = req.body;
 
-    const subCategory = Category.create({
-      parent_id: categoryId,
-      name: name,
-      image: image,
+  const category = await db.Category.create({
+    name: name,
+    image: image,
+    parent_id: categoryId,
+  });
+
+  if (!category) {
+    sendResponse({
+      res,
+      message: "Sub Category Not Found",
+      statusCode: HTTP_STATUS_CODES.NOT_FOUND,
     });
-
-    if (!subCategory) {
-      res.status(HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR).json({
-        status: HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR,
-        message: MESSAGES.ERROR,
-      });
-    } else {
-      res.status(HTTP_STATUS_CODES.OK).json({
-        status: HTTP_STATUS_CODES.OK,
-        message: MESSAGES.SUCCESS.CREATE_SUBCATEGORY,
-      });
-    }
-  } catch (error) {
-    console.error(error);
-    res.status(HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR).json({
-      status: HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR,
-      message: MESSAGES.ERROR,
+  } else {
+    sendResponse({
+      res,
+      message: "SubCategory created successfully",
+      data: category,
     });
   }
 }
 
 export async function updateSubCategory(req: Request, res: Response) {
-  try {
-    const subCategoryId = req.params.id;
-    let { name, image } = req.body;
+  const { id } = req.params as CategoryIdParam;
 
-    const subCategory = Category.update(
-      {
-        name: name,
-        image: image,
-      },
-      {
-        where: {
-          id: subCategoryId,
-        },
-      }
-    );
+  let { name, image } = req.body;
 
-    if (!subCategory) {
-      res.status(HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR).json({
-        status: HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR,
-        message: MESSAGES.ERROR,
+  const [affectedCount] = await db.Category.update(
+    { name, image },
+    { where: { id } }
+  );
+
+  if (affectedCount === 0) {
+    // Nothing was updated
+    sendResponse({
+      res,
+      message: "SubCategory Not Found",
+      statusCode: HTTP_STATUS_CODES.NOT_FOUND,
+    });
+  } else {
+    const category = await db.Category.findByPk(id);
+
+    if (!category) {
+      sendResponse({
+        res,
+        message: "SubCategory Updation failed",
+        statusCode: HTTP_STATUS_CODES.NOT_FOUND,
       });
     } else {
-      res.status(HTTP_STATUS_CODES.OK).json({
-        status: HTTP_STATUS_CODES.OK,
-        message: MESSAGES.SUCCESS.UPDATE_SUBCATEGORY,
+      sendResponse({
+        res,
+        message: "SubCategory Updated successfully",
+        data: category,
       });
     }
-  } catch (error) {
-    console.error(error);
-    res.status(HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR).json({
-      status: HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR,
-      message: MESSAGES.ERROR,
-    });
   }
 }
 
 export async function deleteSubCategory(req: Request, res: Response) {
-  try {
-    const subCategoryId = req.params.id;
+  const { id } = req.params as CategoryIdParam;
 
-    const subCategory = Category.destroy({
-      where: {
-        id: subCategoryId,
-      },
+  const category = db.Category.destroy({
+    where: {
+      id: id,
+    },
+  });
+
+  if (!category) {
+    sendResponse({
+      res,
+      message: "SubCategory Not found",
+      statusCode: HTTP_STATUS_CODES.NOT_FOUND,
     });
-    if (!subCategory) {
-      res.status(HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR).json({
-        status: HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR,
-        message: MESSAGES.ERROR,
-      });
-    } else {
-      res.status(HTTP_STATUS_CODES.OK).json({
-        status: HTTP_STATUS_CODES.OK,
-        message: MESSAGES.SUCCESS.DELETE_SUBCATEGORY,
-      });
-    }
-  } catch (error) {
-    console.error(error);
-    res.status(HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR).json({
-      status: HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR,
-      message: MESSAGES.ERROR,
+  } else {
+    sendResponse({
+      res,
+      message: "SubCategory delted successfully",
     });
   }
 }
