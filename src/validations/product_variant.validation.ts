@@ -4,10 +4,44 @@ import { validateCategoryIds } from "../utils/validateCategoryIds";
 
 export const createProductVariantSchema = z
   .object({
+    name: z.string().min(1),
+    display_label: z.string().min(1),
+    description: z.string().min(1),
+    mrp: z.number().min(0),
+    price: z.number().min(0),
+    image: z.array(z.string().url()).nonempty(),
+    brand_name: z.string().optional().default(""),
+    out_of_stock: z.boolean(),
+    default_variant: z.boolean().optional().default(false),
+    min_quantity: z.number().min(0).optional(),
+    max_quantity: z.number().min(0).optional(),
+    total_available_quantity: z.number().min(0),
+    category_ids: z.array(z.string().uuid()).optional().default([]),
     product_id: z.string().uuid("Invalid product ID"),
-    product_variant: productVariantSchema,
   })
-  .strict();
+  .transform((data) => {
+    const min_quantity = data.out_of_stock
+      ? data.min_quantity ?? 0
+      : data.min_quantity ?? 1;
+    const max_quantity = data.max_quantity ?? data.total_available_quantity;
+    return { ...data, min_quantity, max_quantity };
+  })
+  .refine((data) => data.price <= data.mrp, {
+    message: "Price must be less than or equal to MRP",
+    path: ["price"],
+  })
+  .refine((data) => data.min_quantity! <= data.max_quantity!, {
+    message: "min_quantity must be less than or equal to max_quantity",
+    path: ["min_quantity"],
+  })
+  .refine((data) => data.max_quantity! <= data.total_available_quantity!, {
+    message:
+      "max_quantity must be less than or equal to total_available_quantity",
+    path: ["max_quantity"],
+  })
+  .superRefine(async (data, ctx) => {
+    await validateCategoryIds(data.category_ids, ["category_ids"], ctx);
+  });
 
 export type CreateProductVariantInput = z.infer<
   typeof createProductVariantSchema

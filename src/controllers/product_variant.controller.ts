@@ -10,9 +10,9 @@ import { sendResponse } from "../utils/sendResponse";
 import { db } from "../models";
 
 export const createProductVariant = async (req: Request, res: Response) => {
-  const { product_id, product_variant } = req.body as CreateProductVariantInput;
+  const product_variant: CreateProductVariantInput = req.body;
 
-  const product = await db.Product.findByPk(product_id);
+  const product = await db.Product.findByPk(product_variant.product_id);
   if (!product) {
     throw new ApiError(
       "Product not found",
@@ -22,7 +22,7 @@ export const createProductVariant = async (req: Request, res: Response) => {
   }
 
   const existingVariant = await db.ProductVariant.findOne({
-    where: { product_id },
+    where: { product_id: product_variant.product_id },
   });
 
   if (existingVariant?.name !== product_variant.name) {
@@ -35,7 +35,6 @@ export const createProductVariant = async (req: Request, res: Response) => {
 
   const newProductVariant = await db.ProductVariant.create({
     ...product_variant,
-    product_id,
   });
 
   sendResponse({
