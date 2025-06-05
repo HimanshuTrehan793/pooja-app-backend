@@ -1,14 +1,15 @@
 import express from "express";
 import {
   createProduct,
+  deleteProduct,
   getAllProducts,
   updateProduct,
 } from "../controllers/product.controller";
 import {
   createProductSchema,
   getProductsQuerySchema,
+  productIdParamSchema,
   updateProductBodySchema,
-  updateProductParamsSchema,
 } from "../validations/product.validation";
 import { schemaValidate } from "../middlewares/schemaValidate";
 import { catchAsync } from "../utils/catchAsync";
@@ -25,10 +26,18 @@ router
 
 router
   .route("/:id")
+  // .get(
+  //   schemaValidate(productIdParamSchema, "params"),
+  //   catchAsync(getProductById)
+  // )
   .patch(
-    schemaValidate(updateProductParamsSchema, "params"),
+    schemaValidate(productIdParamSchema, "params"),
     schemaValidate(updateProductBodySchema),
     catchAsync(updateProduct)
+  )
+  .delete(
+    schemaValidate(productIdParamSchema, "params"),
+    catchAsync(deleteProduct)
   );
 
 export default router;

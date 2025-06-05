@@ -1,5 +1,4 @@
 import { Request, Response } from "express";
-import { Otp } from "../models/otp.model";
 import { sendSMS } from "../services/sms.service";
 import { compareOtp, hashOtp } from "../utils/hash";
 import { generateOtp } from "../utils/generateOtp";
@@ -12,7 +11,7 @@ import {
   generateRefreshToken,
   verifyRefreshToken,
 } from "../utils/jwt";
-import { User } from "../models/user.model";
+import { db } from "../models";
 
 const otpExpiryMinutes = parseInt(getEnvVar("OTP_EXPIRES_IN_MINUTES"));
 
@@ -26,14 +25,14 @@ export const sendOtpHandler = async (req: Request, res: Response) => {
 
   await sendSMS(phone_number, message);
 
-  const existingOtp = await Otp.findOne({ where: { phone_number } });
+  const existingOtp = await db.Otp.findOne({ where: { phone_number } });
 
   if (existingOtp) {
     await existingOtp.update({
       otp_code: hashedOtp,
     });
   } else {
-    await Otp.create({
+    await db.Otp.create({
       phone_number,
       otp_code: hashedOtp,
     });
@@ -48,7 +47,7 @@ export const sendOtpHandler = async (req: Request, res: Response) => {
 export const verifyOtpHandler = async (req: Request, res: Response) => {
   const { phone_number, otp_code } = req.body;
 
-  const existingOtp = await Otp.findOne({ where: { phone_number } });
+  const existingOtp = await db.Otp.findOne({ where: { phone_number } });
   if (!existingOtp) {
     throw new ApiError(
       "OTP not found. Please request a new one.",
@@ -81,10 +80,10 @@ export const verifyOtpHandler = async (req: Request, res: Response) => {
 
   existingOtp.destroy();
 
-  let user = await User.findOne({ where: { phone_number } });
+  let user = await db.User.findOne({ where: { phone_number } });
 
   if (!user) {
-    user = await User.create({ phone_number });
+    user = await db.User.create({ phone_number });
   }
 
   const accessToken = generateAccessToken(user.id, phone_number);
@@ -126,7 +125,7 @@ export const refreshTokenHandler = async (req: Request, res: Response) => {
   }
 
   const payload = verifyRefreshToken(refreshToken);
-  const user = await User.findByPk(payload.sub);
+  const user = await db.User.findByPk(payload.sub);
 
   if (!user || user.refresh_token !== refreshToken) {
     throw new ApiError(
@@ -176,7 +175,7 @@ export const logoutHandler = async (req: Request, res: Response) => {
 
   const payload = verifyRefreshToken(refreshToken);
 
-  const user = await User.findByPk(payload.sub);
+  const user = await db.User.findByPk(payload.sub);
   if (user) {
     await user.update({ refresh_token: null });
   }

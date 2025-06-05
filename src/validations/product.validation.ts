@@ -1,18 +1,24 @@
 import { z } from "zod";
 import { validateCategoryIds } from "../utils/validateCategoryIds";
 
-export const getProductsQuerySchema = z.object({
-  page: z.preprocess((val) => Number(val), z.number().min(1).default(1)),
-  limit: z.preprocess(
-    (val) => Number(val),
-    z.number().min(1).max(100).default(30)
-  ),
-  q: z.string().optional(),
-  brand_name: z.string().optional(),
-  price_min: z.preprocess((val) => Number(val), z.number().min(0).optional()).optional(),
-  price_max: z.preprocess((val) => Number(val), z.number().min(0).optional()).optional(),
-  category_id: z.string().uuid().optional(),
-});
+export const getProductsQuerySchema = z
+  .object({
+    page: z.preprocess((val) => Number(val), z.number().min(1).default(1)),
+    limit: z.preprocess(
+      (val) => Number(val),
+      z.number().min(1).max(100).default(30)
+    ),
+    q: z.string().optional(),
+    brand_name: z.string().optional(),
+    price_min: z
+      .preprocess((val) => Number(val), z.number().min(0).optional())
+      .optional(),
+    price_max: z
+      .preprocess((val) => Number(val), z.number().min(0).optional())
+      .optional(),
+    category_id: z.string().uuid().optional(),
+  })
+  .strict();
 
 export type ProductQueryParams = z.infer<typeof getProductsQuerySchema>;
 
@@ -32,6 +38,7 @@ export const productVariantSchema = z
     total_available_quantity: z.number().min(0),
     category_ids: z.array(z.string().uuid()).optional().default([]),
   })
+  .strict()
   .transform((data) => {
     const min_quantity = data.out_of_stock
       ? data.min_quantity ?? 0
@@ -53,6 +60,8 @@ export const productVariantSchema = z
     path: ["max_quantity"],
   });
 
+export type ProductVariant = z.infer<typeof productVariantSchema>;
+
 export const createProductSchema = z
   .object({
     product_variants: z
@@ -69,6 +78,7 @@ export const createProductSchema = z
         }
       ),
   })
+  .strict()
   .superRefine(async (data, ctx) => {
     const allCategoryIds = data.product_variants.flatMap((v) => v.category_ids);
     await validateCategoryIds(allCategoryIds, ["product_variants"], ctx);
@@ -76,21 +86,21 @@ export const createProductSchema = z
 
 export type CreateProductInput = z.infer<typeof createProductSchema>;
 
-export const updateProductParamsSchema = z.object({
-  productId: z.string().uuid("Invalid product ID"),
+export const productIdParamSchema = z.object({
+  id: z.string().uuid("Invalid product ID"),
 });
 
 export const updateProductBodySchema = z.object({
   name: z.string().min(1, "Product name is required"),
 });
 
-export const updateProductPatchSchema = z.object({
-  params: updateProductParamsSchema,
-  body: updateProductBodySchema,
-});
+export const updateProductPatchSchema = z
+  .object({
+    params: productIdParamSchema,
+    body: updateProductBodySchema,
+  })
+  .strict();
 
 export type UpdateProductPatchInput = z.infer<typeof updateProductPatchSchema>;
-export type UpdateProductPatchParams = z.infer<
-  typeof updateProductParamsSchema
->;
+export type ProductIdParam = z.infer<typeof productIdParamSchema>;
 export type UpdateProductPatchBody = z.infer<typeof updateProductBodySchema>;

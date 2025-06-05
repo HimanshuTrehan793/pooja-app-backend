@@ -1,19 +1,18 @@
 import { Request, Response, NextFunction } from "express";
 
 import { Op, WhereOptions } from "sequelize";
-import { Product } from "../models/product.model";
 import { ProductVariant } from "../models/productVariant.model";
-import { Category } from "../models/category.model";
 import { HTTP_STATUS_CODES } from "../constants/httpsStatusCodes";
 import { calculatePagination } from "../utils/pagination";
 import {
   CreateProductInput,
+  ProductIdParam,
   ProductQueryParams,
   UpdateProductPatchBody,
-  UpdateProductPatchParams,
 } from "../validations/product.validation";
 import { sendResponse } from "../utils/sendResponse";
 import { ApiError } from "../utils/apiError";
+import { db } from "../models";
 
 export const getAllProducts = async (
   req: Request,
@@ -38,7 +37,7 @@ export const getAllProducts = async (
   const includeCategory = category_id
     ? [
         {
-          model: Category,
+          model: db.Category,
           as: "categories",
           where: { id: category_id },
           through: { attributes: [] },
@@ -48,7 +47,7 @@ export const getAllProducts = async (
       ]
     : [];
 
-  const { count, rows: products } = await Product.findAndCountAll({
+  const { count, rows: products } = await db.Product.findAndCountAll({
     distinct: true,
     limit: Number(limit),
     offset,
@@ -75,7 +74,7 @@ export const getAllProducts = async (
 
 export const createProduct = async (req: Request, res: Response) => {
   const { product_variants } = req.body as CreateProductInput;
-  const product = await Product.create({});
+  const product = await db.Product.create({});
 
   const variants = await ProductVariant.bulkCreate(
     product_variants.map((variant) => ({
@@ -106,10 +105,10 @@ export const createProduct = async (req: Request, res: Response) => {
 };
 
 export const updateProduct = async (req: Request, res: Response) => {
-  const { productId } = req.params as UpdateProductPatchParams;
+  const { id } = req.params as ProductIdParam;
   const { name } = req.body as UpdateProductPatchBody;
 
-  const product = await Product.findByPk(productId);
+  const product = await db.Product.findByPk(id);
   if (!product) {
     throw new ApiError(
       "Product not found",
@@ -118,10 +117,10 @@ export const updateProduct = async (req: Request, res: Response) => {
     );
   }
 
-  await ProductVariant.update({ name }, { where: { product_id: productId } });
+  await ProductVariant.update({ name }, { where: { product_id: id } });
 
   const updatedVariants = await ProductVariant.findAll({
-    where: { product_id: productId },
+    where: { product_id: id },
   });
 
   sendResponse({
@@ -131,5 +130,23 @@ export const updateProduct = async (req: Request, res: Response) => {
       ...product.toJSON(),
       product_variants: updatedVariants.map((v) => v.toJSON()),
     },
+  });
+};
+
+export const deleteProduct = async (req: Request, res: Response) => {
+  const { id } = req.params as ProductIdParam;
+
+  const product = await db.Product.destroy({ where: { id } });
+  if (!product) {
+    throw new ApiError(
+      "Product not found",
+      HTTP_STATUS_CODES.NOT_FOUND,
+      "not found"
+    );
+  }
+
+  sendResponse({
+    res,
+    message: "Product deleted successfully",
   });
 };

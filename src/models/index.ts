@@ -45,4 +45,7 @@ export const db = {
   sequelize,
   Product,
   ProductVariant,
+  User,
+  Otp,
+  Category,
 };

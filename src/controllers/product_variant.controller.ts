@@ -1,66 +1,52 @@
 import { Request, Response } from "express";
-
-import { Op, WhereOptions } from "sequelize";
-import { Product } from "../models/product.model";
-import { ProductVariant } from "../models/productVariant.model";
-import { Category } from "../models/category.model";
+import {
+  CreateProductVariantInput,
+  ProductVariantIdParam,
+  UpdateProductVariantInput,
+} from "../validations/product_variant.validation";
+import { ApiError } from "../utils/apiError";
 import { HTTP_STATUS_CODES } from "../constants/httpsStatusCodes";
-import { MESSAGES } from "../constants/messages";
-import { calculatePagination } from "../utils/pagination";
+import { sendResponse } from "../utils/sendResponse";
+import { db } from "../models";
 
-export async function createVariant(req: Request, res: Response) {
-  try {
-    let {productId} = req.body;
+export const createProductVariant = async (req: Request, res: Response) => {
+  const { product_id, product_variant } = req.body as CreateProductVariantInput;
 
-    
-  } catch (error) {
-    console.error(error);
-    res.status(HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR).json({
-      status: HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR,
-      message: MESSAGES.ERROR,
-    });
+  const product = await db.Product.findByPk(product_id);
+  if (!product) {
+    throw new ApiError(
+      "Product not found",
+      HTTP_STATUS_CODES.NOT_FOUND,
+      "not found"
+    );
   }
-}
 
-export async function updateVariant(req: Request, res: Response) {
-  try {
-        const variantId = req.params.id;
+  const existingVariant = await db.ProductVariant.findOne({
+    where: { product_id },
+  });
 
-  } catch (error) {
-    console.error(error);
-    res.status(HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR).json({
-      status: HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR,
-      message: MESSAGES.ERROR,
-    });
+  if (existingVariant?.name !== product_variant.name) {
+    throw new ApiError(
+      "Invalid product variant name",
+      HTTP_STATUS_CODES.BAD_REQUEST,
+      "bad request"
+    );
   }
-}
 
-export async function deleteVariant(req: Request, res: Response) {
-  try {
-    const variantId = req.params.id;
+  const newProductVariant = await db.ProductVariant.create({
+    ...product_variant,
+    product_id,
+  });
 
-    const variant = await ProductVariant.destroy({
-      where: {
-        id: variantId,
-      },
-    });
+  sendResponse({
+    res,
+    statusCode: HTTP_STATUS_CODES.CREATED,
+    message: "Product variant created successfully",
+    data: newProductVariant,
+  });
+};
 
-    if (!variant) {
-      res.status(HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR).json({
-        status: HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR,
-        message: MESSAGES.ERROR,
-      });
-    } else {
-      res.status(HTTP_STATUS_CODES.OK).json({
-        status: HTTP_STATUS_CODES.OK,
-        message: MESSAGES.SUCCESS.DELETE_PRODUCT_VARIANT,
-      });
-    }
-  } catch (error) {
-    console.error(error);
-    res.status(HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR).json({
-      status: HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR,
-      message: MESSAGES.ERROR,
-    });
-  }
-}
+export const updateProductVariant = async (req: Request, res: Response) => {
+  const productVariant: UpdateProductVariantInput = req.body;
+  const { id: productVariantId } = req.params as ProductVariantIdParam;
+};

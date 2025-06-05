@@ -1,14 +1,31 @@
 import express from "express";
+import { schemaValidate } from "../middlewares/schemaValidate";
 import {
-  createVariant,
-  deleteVariant,
-  updateVariant,
+  createProductVariantSchema,
+  productVariantIdParamSchema,
+  updateProductVariantSchema,
+} from "../validations/product_variant.validation";
+import { catchAsync } from "../utils/catchAsync";
+import {
+  createProductVariant,
+  updateProductVariant,
 } from "../controllers/product_variant.controller";
 
 const router = express.Router();
 
-router.route("/:id").put(updateVariant).delete(deleteVariant);
+router
+  .route("/")
+  .post(
+    schemaValidate(createProductVariantSchema),
+    catchAsync(createProductVariant)
+  );
 
-// Route for /
-router.route("/").post(createVariant);
+router
+  .route("/:id")
+  .patch(
+    schemaValidate(productVariantIdParamSchema, "params"),
+    schemaValidate(updateProductVariantSchema),
+    catchAsync(updateProductVariant)
+  );
+
 export default router;
