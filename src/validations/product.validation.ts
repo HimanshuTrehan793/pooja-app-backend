@@ -35,6 +35,7 @@ export const productVariantSchema = z
     total_available_quantity: z.number().min(0),
     category_ids: z.array(z.string().uuid()).optional().default([]),
   })
+  .strip()
   .transform((data) => {
     const min_quantity = data.out_of_stock
       ? data.min_quantity ?? 0
@@ -74,6 +75,7 @@ export const createProductSchema = z
         }
       ),
   })
+  .strip();
 
 export type CreateProductInput = z.infer<typeof createProductSchema>;
 
@@ -81,9 +83,13 @@ export const productIdParamSchema = z.object({
   id: z.string().uuid("Invalid product ID"),
 });
 
+export type ProductIdParam = z.infer<typeof productIdParamSchema>;
+
 export const updateProductBodySchema = z.object({
   name: z.string().min(1, "Product name is required"),
 });
+
+export type UpdateProductPatchBody = z.infer<typeof updateProductBodySchema>;
 
 export const updateProductPatchSchema = z.object({
   params: productIdParamSchema,
@@ -91,5 +97,3 @@ export const updateProductPatchSchema = z.object({
 });
 
 export type UpdateProductPatchInput = z.infer<typeof updateProductPatchSchema>;
-export type ProductIdParam = z.infer<typeof productIdParamSchema>;
-export type UpdateProductPatchBody = z.infer<typeof updateProductBodySchema>;

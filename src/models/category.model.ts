@@ -58,7 +58,7 @@ export class Category extends Model<
     Category.hasMany(Category, {
       foreignKey: "parent_id",
       as: "children",
-      onDelete: "CASCADE", 
+      onDelete: "CASCADE",
     });
 
     Category.belongsToMany(ProductVariant, {
@@ -66,6 +66,7 @@ export class Category extends Model<
       foreignKey: "category_id",
       otherKey: "product_variant_id",
       as: "variants",
+      onDelete: "CASCADE",
     });
   }
 }

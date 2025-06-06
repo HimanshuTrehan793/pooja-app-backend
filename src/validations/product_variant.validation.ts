@@ -17,11 +17,14 @@ export const createProductVariantSchema = z
     category_ids: z.array(z.string().uuid()).optional().default([]),
     product_id: z.string().uuid("Invalid product ID"),
   })
+  .strip()
   .transform((data) => {
     const min_quantity = data.out_of_stock
       ? data.min_quantity ?? 0
       : data.min_quantity ?? 1;
+
     const max_quantity = data.max_quantity ?? data.total_available_quantity;
+
     return { ...data, min_quantity, max_quantity };
   })
   .refine((data) => data.price <= data.mrp, {
@@ -36,7 +39,7 @@ export const createProductVariantSchema = z
     message:
       "max_quantity must be less than or equal to total_available_quantity",
     path: ["max_quantity"],
-  })
+  });
 
 export type CreateProductVariantInput = z.infer<
   typeof createProductVariantSchema
@@ -46,7 +49,7 @@ export const productVariantIdParamSchema = z
   .object({
     id: z.string().uuid("Invalid product variant ID"),
   })
-  .strict();
+  .strip();
 
 export type ProductVariantIdParam = z.infer<typeof productVariantIdParamSchema>;
 
@@ -66,7 +69,7 @@ export const updateProductVariantSchema = z
     category_ids: z.array(z.string().uuid()),
   })
   .partial()
-  .strict()
+  .strip()
   .transform((data) => {
     const out_of_stock = data.out_of_stock ?? false;
     const min_quantity = out_of_stock
@@ -76,52 +79,39 @@ export const updateProductVariantSchema = z
     const max_quantity =
       data.max_quantity ?? data.total_available_quantity ?? min_quantity;
 
-    return {
-      ...data,
-      min_quantity,
-      max_quantity,
-    };
+    return { ...data, min_quantity, max_quantity };
   })
   .refine(
-    (data) => {
-      if (data.price !== undefined && data.mrp !== undefined) {
-        return data.price <= data.mrp;
-      }
-      return true;
-    },
+    (data) =>
+      data.price === undefined ||
+      data.mrp === undefined ||
+      data.price <= data.mrp,
     {
       message: "Price must be less than or equal to MRP",
       path: ["price"],
     }
   )
   .refine(
-    (data) => {
-      if (data.min_quantity !== undefined && data.max_quantity !== undefined) {
-        return data.min_quantity <= data.max_quantity;
-      }
-      return true;
-    },
+    (data) =>
+      data.min_quantity === undefined ||
+      data.max_quantity === undefined ||
+      data.min_quantity <= data.max_quantity,
     {
       message: "min_quantity must be less than or equal to max_quantity",
       path: ["min_quantity"],
     }
   )
   .refine(
-    (data) => {
-      if (
-        data.max_quantity !== undefined &&
-        data.total_available_quantity !== undefined
-      ) {
-        return data.max_quantity <= data.total_available_quantity;
-      }
-      return true;
-    },
+    (data) =>
+      data.max_quantity === undefined ||
+      data.total_available_quantity === undefined ||
+      data.max_quantity <= data.total_available_quantity,
     {
       message:
         "max_quantity must be less than or equal to total_available_quantity",
       path: ["max_quantity"],
     }
-  )
+  );
 
 export type UpdateProductVariantInput = z.infer<
   typeof updateProductVariantSchema

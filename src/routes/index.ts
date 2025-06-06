@@ -12,6 +12,6 @@ router.use("/auth", authRoutes);
 router.use("/api/products", productRoutes);
 router.use("/api/variants", productVariantRoutes);
 router.use("/api/categories", categoryRoutes);
- router.use("/api/subCategories", subCategoryRoutes);
+router.use("/api/sub-categories", subCategoryRoutes);
 
 export default router;

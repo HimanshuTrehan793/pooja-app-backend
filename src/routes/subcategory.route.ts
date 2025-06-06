@@ -2,29 +2,39 @@ import express from "express";
 import {
   createSubCategory,
   deleteSubCategory,
-  getSubCategoriesById,
-  getSubCategoryById,
+  getAllSubCategories,
   updateSubCategory,
-} from "../controllers/subcategory.controller";
+} from "../controllers/sub_category.controller";
 import { schemaValidate } from "../middlewares/schemaValidate";
 // import { categoryValidation } from "../validations/category.validation";
 import { catchAsync } from "../utils/catchAsync";
+import {
+  createSubCategorySchema,
+  getSubCategroyQuerySchema,
+  subCategoryIdParamSchema,
+} from "../validations/sub_category.validation";
+import { updateCategorySchema } from "../validations/category.validation";
 
 const router = express.Router();
 
-// router
-//   .route("/")
-//   .post(schemaValidate(categoryValidation), catchAsync(createSubCategory));
+router
+  .route("/")
+  .get(
+    schemaValidate(getSubCategroyQuerySchema, "query"),
+    catchAsync(getAllSubCategories)
+  )
+  .post(schemaValidate(createSubCategorySchema), catchAsync(createSubCategory));
 
- router.route("/subCategoryList/:id").get(catchAsync(getSubCategoryById)) 
-
-// Routes for "/:id"
 router
   .route("/:id")
-  .get(getSubCategoriesById)
-  .patch(catchAsync(updateSubCategory))
-  .delete(catchAsync(deleteSubCategory));
-
-  
+  .patch(
+    schemaValidate(subCategoryIdParamSchema, "params"),
+    schemaValidate(updateCategorySchema),
+    catchAsync(updateSubCategory)
+  )
+  .delete(
+    schemaValidate(subCategoryIdParamSchema, "params"),
+    catchAsync(deleteSubCategory)
+  );
 
 export default router;

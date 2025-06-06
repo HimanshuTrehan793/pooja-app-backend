@@ -122,6 +122,7 @@ export class ProductVariant extends Model<
       foreignKey: "product_variant_id",
       otherKey: "category_id",
       as: "categories",
+      onDelete: "CASCADE",
     });
   }
 }
