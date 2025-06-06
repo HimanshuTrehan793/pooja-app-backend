@@ -105,6 +105,7 @@ export class ProductVariant extends Model<
         sequelize,
         tableName: "product_variants",
         timestamps: true,
+        underscored: true,
       }
     );
   }

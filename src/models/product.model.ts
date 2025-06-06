@@ -29,6 +29,7 @@ export class Product extends Model<
         sequelize,
         tableName: "products",
         timestamps: true,
+        underscored: true,
       }
     );
   }
