@@ -7,14 +7,14 @@ import {
   updateSubCategory,
 } from "../controllers/subcategory.controller";
 import { schemaValidate } from "../middlewares/schemaValidate";
-import { categoryValidation } from "../validations/category.validation";
+// import { categoryValidation } from "../validations/category.validation";
 import { catchAsync } from "../utils/catchAsync";
 
 const router = express.Router();
 
-router
-  .route("/")
-  .post(schemaValidate(categoryValidation), catchAsync(createSubCategory));
+// router
+//   .route("/")
+//   .post(schemaValidate(categoryValidation), catchAsync(createSubCategory));
 
  router.route("/subCategoryList/:id").get(catchAsync(getSubCategoryById)) 
 

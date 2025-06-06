@@ -13,6 +13,7 @@ import {
 import { sendResponse } from "../utils/sendResponse";
 import { ApiError } from "../utils/apiError";
 import { db } from "../models";
+import { runInTransaction } from "../utils/transaction";
 
 export const getAllProducts = async (
   req: Request,
@@ -74,34 +75,54 @@ export const getAllProducts = async (
 
 export const createProduct = async (req: Request, res: Response) => {
   const { product_variants } = req.body as CreateProductInput;
-  const product = await db.Product.create({});
 
-  const variants = await ProductVariant.bulkCreate(
-    product_variants.map((variant) => ({
-      ...variant,
-      product_id: product.id,
-    })),
-    { validate: true }
-  );
+  const result = await runInTransaction(async (tx) => {
+    const product = await db.Product.create({}, { transaction: tx });
 
-  for (let i = 0; i < variants.length; i++) {
-    const variant = variants[i];
-    const categoryIds = product_variants[i].category_ids ?? [];
+    const variants = await db.ProductVariant.bulkCreate(
+      product_variants.map((variant) => ({
+        ...variant,
+        product_id: product.id,
+      })),
+      { validate: true, transaction: tx }
+    );
 
-    if (categoryIds.length > 0) {
-      await variant.setCategories(categoryIds);
+    for (let i = 0; i < variants.length; i++) {
+      const variant = variants[i];
+      const categoryIds = product_variants[i].category_ids ?? [];
+
+      if (categoryIds.length > 0) {
+        const categories = await db.Category.findAll({
+          where: { id: categoryIds },
+          transaction: tx,
+        });
+
+        if (categories.length !== categoryIds.length) {
+          throw new ApiError(
+            `One or more category_ids in product_variant[${i}] are invalid`,
+            HTTP_STATUS_CODES.BAD_REQUEST,
+            "Validation Error"
+          );
+        }
+
+        await variant.setCategories(categories, { transaction: tx });
+      }
     }
-  }
+
+    return { product, variants };
+  });
 
   sendResponse({
     res,
     statusCode: HTTP_STATUS_CODES.CREATED,
     message: "Product created successfully",
     data: {
-      ...product.toJSON(),
-      product_variants: variants.map((v) => v.toJSON()),
+      ...result.product.toJSON(),
+      product_variants: result.variants.map((v) => v.toJSON()),
     },
   });
+
+  return;
 };
 
 export const updateProduct = async (req: Request, res: Response) => {
@@ -131,6 +152,8 @@ export const updateProduct = async (req: Request, res: Response) => {
       product_variants: updatedVariants.map((v) => v.toJSON()),
     },
   });
+
+  return;
 };
 
 export const deleteProduct = async (req: Request, res: Response) => {
@@ -149,4 +172,6 @@ export const deleteProduct = async (req: Request, res: Response) => {
     res,
     message: "Product deleted successfully",
   });
+
+  return;
 };

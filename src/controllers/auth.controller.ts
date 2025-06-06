@@ -12,6 +12,7 @@ import {
   verifyRefreshToken,
 } from "../utils/jwt";
 import { db } from "../models";
+import { runInTransaction } from "../utils/transaction";
 
 const otpExpiryMinutes = parseInt(getEnvVar("OTP_EXPIRES_IN_MINUTES"));
 
@@ -25,23 +26,17 @@ export const sendOtpHandler = async (req: Request, res: Response) => {
 
   await sendSMS(phone_number, message);
 
-  const existingOtp = await db.Otp.findOne({ where: { phone_number } });
-
-  if (existingOtp) {
-    await existingOtp.update({
-      otp_code: hashedOtp,
-    });
-  } else {
-    await db.Otp.create({
-      phone_number,
-      otp_code: hashedOtp,
-    });
-  }
+  await db.Otp.upsert({
+    phone_number,
+    otp_code: hashedOtp,
+  });
 
   sendResponse({
     res,
     message: "OTP sent successfully",
   });
+
+  return;
 };
 
 export const verifyOtpHandler = async (req: Request, res: Response) => {
@@ -69,7 +64,6 @@ export const verifyOtpHandler = async (req: Request, res: Response) => {
   }
 
   const isValid = await compareOtp(otp_code, existingOtp.otp_code);
-
   if (!isValid) {
     throw new ApiError(
       "Incorrect OTP code. Please try again.",
@@ -78,18 +72,22 @@ export const verifyOtpHandler = async (req: Request, res: Response) => {
     );
   }
 
-  existingOtp.destroy();
+  const { accessToken, refreshToken } = await runInTransaction(async (tx) => {
+    await existingOtp.destroy({ transaction: tx });
 
-  let user = await db.User.findOne({ where: { phone_number } });
+    const [user] = await db.User.findOrCreate({
+      where: { phone_number },
+      defaults: { phone_number },
+      transaction: tx,
+    });
 
-  if (!user) {
-    user = await db.User.create({ phone_number });
-  }
+    const accessToken = generateAccessToken(user.id, phone_number);
+    const refreshToken = generateRefreshToken(user.id);
 
-  const accessToken = generateAccessToken(user.id, phone_number);
-  const refreshToken = generateRefreshToken(user.id);
+    await user.update({ refresh_token: refreshToken }, { transaction: tx });
 
-  await user.update({ refresh_token: refreshToken });
+    return { accessToken, refreshToken };
+  });
 
   res.cookie("refresh_token", refreshToken, {
     httpOnly: true,
@@ -106,6 +104,8 @@ export const verifyOtpHandler = async (req: Request, res: Response) => {
       refresh_token: refreshToken,
     },
   });
+
+  return;
 };
 
 export const refreshTokenHandler = async (req: Request, res: Response) => {
@@ -155,6 +155,8 @@ export const refreshTokenHandler = async (req: Request, res: Response) => {
       refresh_token: newRefreshToken,
     },
   });
+
+  return;
 };
 
 export const logoutHandler = async (req: Request, res: Response) => {
@@ -190,4 +192,6 @@ export const logoutHandler = async (req: Request, res: Response) => {
     res,
     message: "Logged out successfully",
   });
+
+  return;
 };

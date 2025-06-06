@@ -7,7 +7,7 @@ import {
   CreationOptional,
   Sequelize,
   ForeignKey,
-  NonAttribute,
+  Transaction,
 } from "sequelize";
 import { Product } from "./product.model";
 import { Category } from "./category.model";
@@ -31,7 +31,10 @@ export class ProductVariant extends Model<
   declare max_quantity: CreationOptional<number>;
   declare total_available_quantity: number;
 
-  declare setCategories: (categories: string[] | Category[]) => Promise<void>;
+  declare setCategories: (
+    categories: Category[] | null,
+    options?: { transaction?: Transaction }
+  ) => Promise<void>;
   declare addCategories: (categories: string[] | Category[]) => Promise<void>;
   declare getCategories: () => Promise<Category[]>;
 

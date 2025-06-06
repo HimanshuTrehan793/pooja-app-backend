@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { validateCategoryIds } from "../utils/validateCategoryIds";
 
 export const getProductsQuerySchema = z.object({
   page: z.preprocess((val) => Number(val), z.number().min(1).default(1)),
@@ -75,10 +74,6 @@ export const createProductSchema = z
         }
       ),
   })
-  .superRefine(async (data, ctx) => {
-    const allCategoryIds = data.product_variants.flatMap((v) => v.category_ids);
-    await validateCategoryIds(allCategoryIds, ["product_variants"], ctx);
-  });
 
 export type CreateProductInput = z.infer<typeof createProductSchema>;
 

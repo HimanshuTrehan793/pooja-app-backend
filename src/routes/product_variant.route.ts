@@ -8,6 +8,7 @@ import {
 import { catchAsync } from "../utils/catchAsync";
 import {
   createProductVariant,
+  deleteProductVariantById,
   updateProductVariant,
 } from "../controllers/product_variant.controller";
 
@@ -26,6 +27,10 @@ router
     schemaValidate(productVariantIdParamSchema, "params"),
     schemaValidate(updateProductVariantSchema),
     catchAsync(updateProductVariant)
+  )
+  .delete(
+    schemaValidate(productVariantIdParamSchema, "params"),
+    catchAsync(deleteProductVariantById)
   );
 
 export default router;

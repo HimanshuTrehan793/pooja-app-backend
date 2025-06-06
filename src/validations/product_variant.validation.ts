@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { validateCategoryIds } from "../utils/validateCategoryIds";
 
 export const createProductVariantSchema = z
   .object({
@@ -38,9 +37,6 @@ export const createProductVariantSchema = z
       "max_quantity must be less than or equal to total_available_quantity",
     path: ["max_quantity"],
   })
-  .superRefine(async (data, ctx) => {
-    await validateCategoryIds(data.category_ids, ["category_ids"], ctx);
-  });
 
 export type CreateProductVariantInput = z.infer<
   typeof createProductVariantSchema
@@ -70,6 +66,7 @@ export const updateProductVariantSchema = z
     category_ids: z.array(z.string().uuid()),
   })
   .partial()
+  .strict()
   .transform((data) => {
     const out_of_stock = data.out_of_stock ?? false;
     const min_quantity = out_of_stock
@@ -125,12 +122,6 @@ export const updateProductVariantSchema = z
       path: ["max_quantity"],
     }
   )
-  .superRefine(async (data, ctx) => {
-    if (data.category_ids && data.category_ids.length === 0) {
-      await validateCategoryIds(data.category_ids, ["category_ids"], ctx);
-    }
-    return;
-  });
 
 export type UpdateProductVariantInput = z.infer<
   typeof updateProductVariantSchema
