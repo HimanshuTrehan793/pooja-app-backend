@@ -12,14 +12,12 @@ export const sendOtpSchema = z
   .object({
     phone_number: phoneSchema,
   })
-  .strip();
 
 export const verifyOtpSchema = z
   .object({
     phone_number: phoneSchema,
     otp_code: otpCodeSchema,
   })
-  .strip();
 
 export type SendOtpInput = z.infer<typeof sendOtpSchema>;
 export type VerifyOtpInput = z.infer<typeof verifyOtpSchema>;

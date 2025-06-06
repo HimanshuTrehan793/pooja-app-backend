@@ -17,7 +17,7 @@ export const createSubCategorySchema = z
     image: z.string().url().nonempty(),
     parent_id: z.string().uuid().optional(),
   })
-  .strip();
+  .strict();
 
 export type CreateSubCategoryInput = z.infer<typeof createSubCategorySchema>;
 
@@ -32,7 +32,7 @@ export const updateSubCategorySchema = z
     name: z.string().min(3).max(30).optional(),
     image: z.string().url().nonempty().optional(),
   })
-  .strip()
+  .strict()
   .refine((data) => data.name !== undefined || data.image !== undefined, {
     message: "At least one field (name or image) must be provided.",
   });

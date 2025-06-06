@@ -35,7 +35,7 @@ export const productVariantSchema = z
     total_available_quantity: z.number().min(0),
     category_ids: z.array(z.string().uuid()).optional().default([]),
   })
-  .strip()
+  .strict()
   .transform((data) => {
     const min_quantity = data.out_of_stock
       ? data.min_quantity ?? 0
@@ -59,23 +59,21 @@ export const productVariantSchema = z
 
 export type ProductVariant = z.infer<typeof productVariantSchema>;
 
-export const createProductSchema = z
-  .object({
-    product_variants: z
-      .array(productVariantSchema)
-      .min(1)
-      .refine(
-        (variants) => {
-          const firstName = variants[0]?.name;
-          return variants.every((v) => v.name === firstName);
-        },
-        {
-          message: "All product variant names must be the same",
-          path: ["product_variants"],
-        }
-      ),
-  })
-  .strip();
+export const createProductSchema = z.object({
+  product_variants: z
+    .array(productVariantSchema)
+    .min(1)
+    .refine(
+      (variants) => {
+        const firstName = variants[0]?.name;
+        return variants.every((v) => v.name === firstName);
+      },
+      {
+        message: "All product variant names must be the same",
+        path: ["product_variants"],
+      }
+    ),
+});
 
 export type CreateProductInput = z.infer<typeof createProductSchema>;
 

@@ -17,7 +17,7 @@ export const createProductVariantSchema = z
     category_ids: z.array(z.string().uuid()).optional().default([]),
     product_id: z.string().uuid("Invalid product ID"),
   })
-  .strip()
+  .strict()
   .transform((data) => {
     const min_quantity = data.out_of_stock
       ? data.min_quantity ?? 0
@@ -49,7 +49,6 @@ export const productVariantIdParamSchema = z
   .object({
     id: z.string().uuid("Invalid product variant ID"),
   })
-  .strip();
 
 export type ProductVariantIdParam = z.infer<typeof productVariantIdParamSchema>;
 
@@ -69,7 +68,7 @@ export const updateProductVariantSchema = z
     category_ids: z.array(z.string().uuid()),
   })
   .partial()
-  .strip()
+  .strict()
   .transform((data) => {
     const out_of_stock = data.out_of_stock ?? false;
     const min_quantity = out_of_stock
