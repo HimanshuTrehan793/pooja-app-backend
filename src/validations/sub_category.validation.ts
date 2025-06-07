@@ -1,12 +1,7 @@
 import { z } from "zod";
 
 export const getSubCategroyQuerySchema = z.object({
-  parent_ids: z
-    .preprocess(
-      (val) => (typeof val === "string" ? val.split(",") : val),
-      z.array(z.string().uuid())
-    )
-    .optional(),
+  parent_ids: z.string().optional(),
 });
 
 export type SubCategoryQueryParams = z.infer<typeof getSubCategroyQuerySchema>;

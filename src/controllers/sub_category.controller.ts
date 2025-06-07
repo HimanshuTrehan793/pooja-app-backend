@@ -13,16 +13,39 @@ import { UpdateCategoryInput } from "../validations/category.validation";
 
 export const getAllSubCategories = async (req: Request, res: Response) => {
   const { parent_ids } = req.query as SubCategoryQueryParams;
+  let categoryIds: string[] = [];
 
-  if (parent_ids && parent_ids.length > 0) {
+  if (parent_ids) {
+    categoryIds = parent_ids
+      .split(",")
+      .map((id) => id.trim())
+      .filter((id) => id.length > 0);
+
+    const invalidId = categoryIds.find(
+      (id) =>
+        !/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/.test(
+          id
+        )
+    );
+
+    if (invalidId) {
+      throw new ApiError(
+        `Invalid UUID: ${invalidId}`,
+        HTTP_STATUS_CODES.BAD_REQUEST,
+        "Validation Error"
+      );
+    }
+  }
+
+  if (categoryIds && categoryIds.length > 0) {
     const categories = await db.Category.findAll({
       where: {
-        id: { [Op.in]: parent_ids },
+        id: { [Op.in]: categoryIds },
         parent_id: { [Op.is]: null },
       },
     });
 
-    if (categories.length !== parent_ids.length) {
+    if (categories.length !== categoryIds.length) {
       throw new ApiError(
         "Invalid Category IDs provided",
         HTTP_STATUS_CODES.BAD_REQUEST,
@@ -32,7 +55,7 @@ export const getAllSubCategories = async (req: Request, res: Response) => {
 
     const subCategories = await db.Category.findAll({
       where: {
-        parent_id: { [Op.in]: parent_ids },
+        parent_id: { [Op.in]: categoryIds },
       },
     });
 
