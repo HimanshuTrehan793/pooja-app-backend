@@ -7,6 +7,8 @@ import { ProductVariant } from "./productVariant.model";
 import { User } from "./user.model";
 import { Otp } from "./otp.model";
 import { Category } from "./category.model";
+import { Configuration } from "./configuration.model";
+import { AdBanner } from "./ad-banner.model";
 
 const env: Env = "development";
 const dbConfig = config[env];
@@ -35,11 +37,15 @@ ProductVariant.initModel(sequelize);
 User.initModel(sequelize);
 Otp.initModel(sequelize);
 Category.initModel(sequelize);
+Configuration.initModel(sequelize);
+AdBanner.initModel(sequelize)
 
 // Setup associations
 Product.associate();
 ProductVariant.associate();
 Category.associate();
+Configuration.associate();
+AdBanner.associate();
 
 export const db = {
   sequelize,
@@ -48,4 +54,6 @@ export const db = {
   User,
   Otp,
   Category,
+  Configuration,
+  AdBanner
 };
