@@ -9,10 +9,14 @@ import { HTTP_STATUS_CODES } from "../constants/httpsStatusCodes";
 import { sendResponse } from "../utils/sendResponse";
 import { db } from "../models";
 import { runInTransaction } from "../utils/transaction";
+import { Op } from "sequelize";
 
 export const createProductVariant = async (req: Request, res: Response) => {
-  const { category_ids, ...product_variant }: CreateProductVariantInput =
-    req.body;
+  const {
+    category_ids,
+    subcategory_ids,
+    ...product_variant
+  }: CreateProductVariantInput = req.body;
 
   const product = await db.Product.findByPk(product_variant.product_id);
   if (!product) {
@@ -41,38 +45,75 @@ export const createProductVariant = async (req: Request, res: Response) => {
     });
 
     if (category_ids.length > 0) {
-      const categories = await db.Category.findAll({
-        where: { id: category_ids },
+      const allCategoryIds = [...category_ids, ...subcategory_ids];
+
+      const allCategories = await db.Category.findAll({
+        where: {
+          id: allCategoryIds,
+        },
         transaction: tx,
       });
 
-      if (categories.length !== category_ids.length) {
+      const validCategoryIds = allCategories
+        .filter((cat) => cat.parent_id === null)
+        .map((cat) => cat.id);
+      const validSubcategoryIds = allCategories
+        .filter((cat) => cat.parent_id !== null)
+        .map((cat) => cat.id);
+
+      if (validCategoryIds.length !== category_ids.length) {
         throw new ApiError(
-          "Invalid category_ids provided",
+          `One or more category_ids in product_variant are invalid`,
           HTTP_STATUS_CODES.BAD_REQUEST,
           "Validation Error"
         );
       }
 
-      await variant.setCategories(categories, { transaction: tx });
+      if (validSubcategoryIds.length !== subcategory_ids.length) {
+        throw new ApiError(
+          `One or more subcategory_ids in product_variant are invalid`,
+          HTTP_STATUS_CODES.BAD_REQUEST,
+          "Validation Error"
+        );
+      }
+
+      await variant.setCategories(allCategories, { transaction: tx });
     }
 
     return variant;
   });
 
+  // Fetch categories and subcategories after creation
+  const allCategories = await newProductVariant.getCategories();
+
+  const filteredCategories = allCategories.map((cat: any) => ({
+    id: cat.id,
+    parent_id: cat.parent_id,
+    name: cat.name,
+    image: cat.image,
+  }));
+
+  // Send response
   sendResponse({
     res,
     statusCode: HTTP_STATUS_CODES.CREATED,
     message: "Product variant created successfully",
-    data: newProductVariant,
+    data: {
+      ...newProductVariant.toJSON(),
+      categories: filteredCategories,
+    },
   });
 
   return;
 };
 
 export const updateProductVariant = async (req: Request, res: Response) => {
-  const { category_ids, ...updatedVariant }: UpdateProductVariantInput =
-    req.body;
+  const {
+    category_ids = [],
+    subcategory_ids = [],
+    ...updatedVariant
+  }: UpdateProductVariantInput = req.body;
+
   const { id: productVariantId } = req.params as ProductVariantIdParam;
 
   const existingProductVariant = await db.ProductVariant.findByPk(
@@ -90,15 +131,17 @@ export const updateProductVariant = async (req: Request, res: Response) => {
   const result = await runInTransaction(async (tx) => {
     await existingProductVariant.update(updatedVariant, { transaction: tx });
 
-    if (category_ids !== undefined) {
+    const allCategoryIds = [...category_ids, ...subcategory_ids];
+
+    if (allCategoryIds.length) {
       const categories = await db.Category.findAll({
-        where: { id: category_ids },
+        where: { id: allCategoryIds },
         transaction: tx,
       });
 
-      if (categories.length !== category_ids.length) {
+      if (categories.length !== allCategoryIds.length) {
         throw new ApiError(
-          "One or more category_ids are invalid",
+          "One or more category_ids or sub_category_ids are invalid",
           HTTP_STATUS_CODES.BAD_REQUEST,
           "Validation Error"
         );
@@ -109,14 +152,27 @@ export const updateProductVariant = async (req: Request, res: Response) => {
       });
     }
 
-    return existingProductVariant.reload({ transaction: tx });
+    // Reload with associated categories to construct response
+    return await db.ProductVariant.findByPk(productVariantId, {
+      transaction: tx,
+      include: [
+        {
+          model: db.Category,
+          as: "categories",
+          attributes: ["id", "parent_id","name","image"],
+          through: { attributes: [] },
+        },
+      ],
+    });
   });
+
+
 
   sendResponse({
     res,
     statusCode: HTTP_STATUS_CODES.OK,
     message: "Product variant updated successfully",
-    data: result,
+    data: result
   });
 
   return;

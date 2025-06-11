@@ -15,6 +15,7 @@ export const createProductVariantSchema = z
     max_quantity: z.number().min(0).optional(),
     total_available_quantity: z.number().min(0),
     category_ids: z.array(z.string().uuid()).optional().default([]),
+    subcategory_ids: z.array(z.string().uuid()).optional().default([]),
     product_id: z.string().uuid("Invalid product ID"),
   })
   .strict()
@@ -66,6 +67,7 @@ export const updateProductVariantSchema = z
     max_quantity: z.number().min(0),
     total_available_quantity: z.number().min(0),
     category_ids: z.array(z.string().uuid()),
+    subcategory_ids: z.array(z.string().uuid()),
   })
   .partial()
   .strict()

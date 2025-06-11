@@ -35,8 +35,10 @@ export class ProductVariant extends Model<
     categories: Category[] | null,
     options?: { transaction?: Transaction }
   ) => Promise<void>;
+
   declare addCategories: (categories: string[] | Category[]) => Promise<void>;
   declare getCategories: () => Promise<Category[]>;
+
 
   static initModel(sequelize: Sequelize) {
     ProductVariant.init(

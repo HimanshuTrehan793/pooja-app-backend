@@ -34,6 +34,7 @@ export const productVariantSchema = z
     max_quantity: z.number().min(0).optional(),
     total_available_quantity: z.number().min(0),
     category_ids: z.array(z.string().uuid()).optional().default([]),
+    subcategory_ids: z.array(z.string().uuid()).optional().default([]),
   })
   .strict()
   .transform((data) => {

@@ -35,19 +35,6 @@ export const getAllProducts = async (
     };
   }
 
-  const includeCategory = category_id
-    ? [
-        {
-          model: db.Category,
-          as: "categories",
-          where: { id: category_id },
-          through: { attributes: [] },
-          attributes: [],
-          required: true,
-        },
-      ]
-    : [];
-
   const { count, rows: products } = await db.Product.findAndCountAll({
     distinct: true,
     limit: Number(limit),
@@ -58,7 +45,19 @@ export const getAllProducts = async (
         as: "product_variants",
         where: Object.keys(whereVariant).length ? whereVariant : undefined,
         required: true,
-        include: includeCategory,
+        include: [
+          {
+            model: db.Category,
+            as: "categories",
+            attributes: ["id", "parent_id", "name", "image"],
+            through: { attributes: [] }, // needed to skip join table metadata
+             ...(category_id && {
+            where: {
+              id: category_id
+            }
+          })
+          },
+        ],
       },
     ],
   });
@@ -90,14 +89,26 @@ export const createProduct = async (req: Request, res: Response) => {
     for (let i = 0; i < variants.length; i++) {
       const variant = variants[i];
       const categoryIds = product_variants[i].category_ids ?? [];
+      const subCategoryIds = product_variants[i].subcategory_ids ?? [];
 
       if (categoryIds.length > 0) {
-        const categories = await db.Category.findAll({
-          where: { id: categoryIds },
+        const allCategoryIds = [...categoryIds, ...subCategoryIds];
+
+        const allCategories = await db.Category.findAll({
+          where: {
+            id: allCategoryIds,
+          },
           transaction: tx,
         });
 
-        if (categories.length !== categoryIds.length) {
+        const validCategoryIds = allCategories
+          .filter((cat) => cat.parent_id === null)
+          .map((cat) => cat.id);
+        const validSubcategoryIds = allCategories
+          .filter((cat) => cat.parent_id !== null)
+          .map((cat) => cat.id);
+
+        if (validCategoryIds.length !== categoryIds.length) {
           throw new ApiError(
             `One or more category_ids in product_variant[${i}] are invalid`,
             HTTP_STATUS_CODES.BAD_REQUEST,
@@ -105,7 +116,15 @@ export const createProduct = async (req: Request, res: Response) => {
           );
         }
 
-        await variant.setCategories(categories, { transaction: tx });
+        if (validSubcategoryIds.length !== subCategoryIds.length) {
+          throw new ApiError(
+            `One or more subcategory_ids in product_variant[${i}] are invalid`,
+            HTTP_STATUS_CODES.BAD_REQUEST,
+            "Validation Error"
+          );
+        }
+
+        await variant.setCategories(allCategories, { transaction: tx });
       }
     }
 
@@ -141,7 +160,17 @@ export const updateProduct = async (req: Request, res: Response) => {
   await ProductVariant.update({ name }, { where: { product_id: id } });
 
   const updatedVariants = await ProductVariant.findAll({
-    where: { product_id: id },
+    where: {
+      product_id: id,
+    },
+    include: [
+      {
+        model: db.Category,
+        as: "categories",
+        attributes: ["id", "parent_id","name","image"],
+        through: { attributes: [] }, // needed to skip join table metadata
+      },
+    ],
   });
 
   sendResponse({
@@ -149,7 +178,7 @@ export const updateProduct = async (req: Request, res: Response) => {
     message: "Product updated successfully",
     data: {
       ...product.toJSON(),
-      product_variants: updatedVariants.map((v) => v.toJSON()),
+      product_variants: updatedVariants,
     },
   });
 
