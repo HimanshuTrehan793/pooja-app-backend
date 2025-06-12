@@ -3,6 +3,7 @@ import {
   createCategory,
   deleteCategory,
   getAllCategories,
+  getCategoryById,
   updateCategory,
 } from "../controllers/category.controller";
 import { schemaValidate } from "../middlewares/schemaValidate";
@@ -26,6 +27,10 @@ router
 
 router
   .route("/:id")
+  .get(
+    schemaValidate(categoryIdParamSchema, "params"),
+    catchAsync(getCategoryById)
+  )
   .patch(
     schemaValidate(categoryIdParamSchema, "params"),
     schemaValidate(updateCategorySchema),

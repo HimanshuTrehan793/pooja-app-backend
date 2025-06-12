@@ -12,7 +12,7 @@ import {
 import { sendResponse } from "../utils/sendResponse";
 import { ApiError } from "../utils/apiError";
 
-export async function getAllCategories(req: Request, res: Response) {
+export const getAllCategories = async (req: Request, res: Response) => {
   const { page, limit, q } = req.query as unknown as CategoryQueryParams;
   const offset = (page - 1) * limit;
 
@@ -37,9 +37,8 @@ export async function getAllCategories(req: Request, res: Response) {
   });
 
   return;
-}
-
-export async function createCategory(req: Request, res: Response) {
+};
+export const createCategory = async (req: Request, res: Response) => {
   const { name, image } = req.body as CreateCategoryInput;
 
   const category = await db.Category.create({
@@ -55,9 +54,33 @@ export async function createCategory(req: Request, res: Response) {
   });
 
   return;
-}
+};
 
-export async function updateCategory(req: Request, res: Response) {
+export const getCategoryById = async (req: Request, res: Response) => {
+  const { id } = req.params as CategoryIdParam;
+
+  const category = await db.Category.findOne({
+    where: { id, parent_id: { [Op.is]: null } },
+  });
+
+  if (!category) {
+    throw new ApiError(
+      "Category not found",
+      HTTP_STATUS_CODES.NOT_FOUND,
+      "not found"
+    );
+  }
+
+  sendResponse({
+    res,
+    message: "Category fetched successfully",
+    data: category,
+  });
+
+  return;
+};
+
+export const updateCategory = async (req: Request, res: Response) => {
   const { id } = req.params as CategoryIdParam;
   const updates: UpdateCategoryInput = req.body;
 
@@ -77,11 +100,11 @@ export async function updateCategory(req: Request, res: Response) {
     data: updatedCategory,
     statusCode: HTTP_STATUS_CODES.OK,
   });
-  
-  return;
-}
 
-export async function deleteCategory(req: Request, res: Response) {
+  return;
+};
+
+export const deleteCategory = async (req: Request, res: Response) => {
   const { id: categoryId } = req.params as CategoryIdParam;
   const category = await db.Category.destroy({
     where: { id: categoryId, parent_id: { [Op.is]: null } },
@@ -101,4 +124,4 @@ export async function deleteCategory(req: Request, res: Response) {
   });
 
   return;
-}
+};
