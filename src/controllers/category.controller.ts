@@ -55,7 +55,7 @@ export const createCategory = async (req: Request, res: Response) => {
   });
 
   const categoryPriority = highestPriorityCategory
-    ? highestPriorityCategory.priority + 1000
+    ? Number(highestPriorityCategory.priority) + 1000
     : 1000;
 
   const category = await db.Category.create({

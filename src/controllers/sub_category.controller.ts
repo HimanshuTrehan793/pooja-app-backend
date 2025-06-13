@@ -95,7 +95,7 @@ export const createSubCategory = async (req: Request, res: Response) => {
   });
 
   const subCategoryPriority = highestPrioritySubCategory
-    ? highestPrioritySubCategory.priority + 1000
+    ? Number(highestPrioritySubCategory.priority) + 1000
     : 1000;
 
   const subCategory = await db.Category.create({

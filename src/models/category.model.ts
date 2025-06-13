@@ -33,7 +33,6 @@ export class Category extends Model<
         },
         priority: {
           type: DataTypes.DECIMAL(20, 10),
-          unique: true,
           allowNull: false,
         },
         image: {
