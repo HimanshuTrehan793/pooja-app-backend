@@ -20,7 +20,6 @@ const router = express.Router();
 router
   .route("/")
   .get(
-    schemaValidate(getCategoryQuerySchema, "query"),
     catchAsync(getAllCategories)
   )
   .post(schemaValidate(createCategorySchema), catchAsync(createCategory));

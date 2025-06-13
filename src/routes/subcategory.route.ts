@@ -6,11 +6,9 @@ import {
   updateSubCategory,
 } from "../controllers/sub_category.controller";
 import { schemaValidate } from "../middlewares/schemaValidate";
-// import { categoryValidation } from "../validations/category.validation";
 import { catchAsync } from "../utils/catchAsync";
 import {
   createSubCategorySchema,
-  getSubCategroyQuerySchema,
   subCategoryIdParamSchema,
 } from "../validations/sub_category.validation";
 import { updateCategorySchema } from "../validations/category.validation";
@@ -20,7 +18,6 @@ const router = express.Router();
 router
   .route("/")
   .get(
-    schemaValidate(getSubCategroyQuerySchema, "query"),
     catchAsync(getAllSubCategories)
   )
   .post(schemaValidate(createSubCategorySchema), catchAsync(createSubCategory));

@@ -7,7 +7,6 @@ import {
 } from "../controllers/product.controller";
 import {
   createProductSchema,
-  getProductsQuerySchema,
   productIdParamSchema,
   updateProductBodySchema,
 } from "../validations/product.validation";
@@ -19,7 +18,6 @@ const router = express.Router();
 router
   .route("/")
   .get(
-    schemaValidate(getProductsQuerySchema, "query"),
     catchAsync(getAllProducts)
   )
   .post(schemaValidate(createProductSchema), catchAsync(createProduct));

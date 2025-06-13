@@ -6,6 +6,7 @@ import { HTTP_STATUS_CODES } from "../constants/httpsStatusCodes";
 import { calculatePagination } from "../utils/pagination";
 import {
   CreateProductInput,
+  getProductsQuerySchema,
   ProductIdParam,
   ProductQueryParams,
   UpdateProductPatchBody,
@@ -14,6 +15,7 @@ import { sendResponse } from "../utils/sendResponse";
 import { ApiError } from "../utils/apiError";
 import { db } from "../models";
 import { runInTransaction } from "../utils/transaction";
+import { parseQueryParams } from "../utils/parseQueryParams";
 
 export const getAllProducts = async (
   req: Request,
@@ -21,7 +23,7 @@ export const getAllProducts = async (
   next: NextFunction
 ) => {
   const { page, limit, q, brand_name, price_min, price_max, category_id } =
-    req.query as unknown as ProductQueryParams;
+    parseQueryParams(getProductsQuerySchema, req.query) as ProductQueryParams;
 
   const offset = (page - 1) * limit;
 
@@ -51,11 +53,11 @@ export const getAllProducts = async (
             as: "categories",
             attributes: ["id", "parent_id", "name", "image"],
             through: { attributes: [] }, // needed to skip join table metadata
-             ...(category_id && {
-            where: {
-              id: category_id
-            }
-          })
+            ...(category_id && {
+              where: {
+                id: category_id,
+              },
+            }),
           },
         ],
       },
@@ -167,7 +169,7 @@ export const updateProduct = async (req: Request, res: Response) => {
       {
         model: db.Category,
         as: "categories",
-        attributes: ["id", "parent_id","name","image"],
+        attributes: ["id", "parent_id", "name", "image"],
         through: { attributes: [] }, // needed to skip join table metadata
       },
     ],

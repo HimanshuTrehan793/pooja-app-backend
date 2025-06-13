@@ -15,6 +15,7 @@ export class Category extends Model<
   declare id: CreationOptional<string>;
   declare name: string;
   declare image: string;
+  declare priority: number;
   declare parent_id: CreationOptional<string> | null;
 
   static initModel(sequelize: Sequelize) {
@@ -28,6 +29,11 @@ export class Category extends Model<
         },
         name: {
           type: DataTypes.STRING,
+          allowNull: false,
+        },
+        priority: {
+          type: DataTypes.DECIMAL(20, 10),
+          unique: true,
           allowNull: false,
         },
         image: {
