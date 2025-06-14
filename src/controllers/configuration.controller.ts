@@ -16,7 +16,7 @@ const DEFAULT_CONFIG = {
   ad_banners: [],
 };
 
-export async function getConfigurations(req: Request, res: Response) {
+export const getConfigurations = async (req: Request, res: Response) => {
   let configuration = await db.Configuration.findByPk(1);
 
   //   If not present, create with default
@@ -35,7 +35,7 @@ export async function getConfigurations(req: Request, res: Response) {
   });
 }
 
-export async function updateConfiguration(req: Request, res: Response) {
+export const  updateConfiguration = async (req: Request, res: Response) => {
   const updates = req.body;
 
   // Find or create config
