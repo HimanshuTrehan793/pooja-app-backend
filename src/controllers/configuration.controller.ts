@@ -18,7 +18,6 @@ const DEFAULT_CONFIG = {
 
 export async function getConfigurations(req: Request, res: Response) {
   let configuration = await db.Configuration.findByPk(1);
-  console.log(configuration);
 
   //   If not present, create with default
   if (!configuration) {
