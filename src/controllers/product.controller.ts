@@ -146,6 +146,46 @@ export const createProduct = async (req: Request, res: Response) => {
   return;
 };
 
+
+export const getProductById = async (req: Request, res: Response) => {
+  const { id } = req.params as ProductIdParam;
+
+  const product = await db.Product.findByPk(id);
+  if (!product) {
+    throw new ApiError(
+      "Product not found",
+      HTTP_STATUS_CODES.NOT_FOUND,
+      "not found"
+    );
+  }
+
+
+  const updatedVariants = await ProductVariant.findAll({
+    where: {
+      product_id: id,
+    },
+    include: [
+      {
+        model: db.Category,
+        as: "categories",
+        attributes: ["id", "parent_id", "name", "image"],
+        through: { attributes: [] }, // needed to skip join table metadata
+      },
+    ],
+  });
+
+  sendResponse({
+    res,
+    message: "Product updated successfully",
+    data: {
+      ...product.toJSON(),
+      product_variants: updatedVariants,
+    },
+  });
+
+  return;
+};
+
 export const updateProduct = async (req: Request, res: Response) => {
   const { id } = req.params as ProductIdParam;
   const { name } = req.body as UpdateProductPatchBody;

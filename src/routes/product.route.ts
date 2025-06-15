@@ -3,6 +3,7 @@ import {
   createProduct,
   deleteProduct,
   getAllProducts,
+  getProductById,
   updateProduct,
 } from "../controllers/product.controller";
 import {
@@ -24,10 +25,10 @@ router
 
 router
   .route("/:id")
-  // .get(
-  //   schemaValidate(productIdParamSchema, "params"),
-  //   catchAsync(getProductById)
-  // )
+  .get(
+    schemaValidate(productIdParamSchema, "params"),
+    catchAsync(getProductById)
+  )
   .patch(
     schemaValidate(productIdParamSchema, "params"),
     schemaValidate(updateProductBodySchema),
