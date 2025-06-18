@@ -11,6 +11,7 @@ import {
 } from "sequelize";
 import { Product } from "./product.model";
 import { Category } from "./category.model";
+import { CartItem } from "./cart.model";
 
 export class ProductVariant extends Model<
   InferAttributes<ProductVariant>,
@@ -39,7 +40,6 @@ export class ProductVariant extends Model<
   declare addCategories: (categories: string[] | Category[]) => Promise<void>;
   declare getCategories: () => Promise<Category[]>;
 
-
   static initModel(sequelize: Sequelize) {
     ProductVariant.init(
       {
@@ -53,7 +53,7 @@ export class ProductVariant extends Model<
           type: DataTypes.UUID,
           allowNull: false,
         },
-        display_label: {
+        display_label: { 
           type: DataTypes.STRING,
           allowNull: false,
         },
@@ -125,6 +125,24 @@ export class ProductVariant extends Model<
       otherKey: "category_id",
       as: "categories",
       onDelete: "CASCADE",
+    });
+
+    ProductVariant.hasMany(CartItem, {
+      foreignKey: "product_variant_id",
+      as: "cart_items",
+      onDelete: "CASCADE",
+    });
+  }
+
+  static setupHooks() {
+    ProductVariant.afterDestroy(async (instance: ProductVariant) => {
+      const count = await ProductVariant.count({
+        where: { product_id: instance.product_id },
+      });
+
+      if (count === 0) {
+        await Product.destroy({ where: { id: instance.product_id } });
+      }
     });
   }
 }

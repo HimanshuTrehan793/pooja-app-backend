@@ -29,6 +29,7 @@ export class Otp extends Model<
         phone_number: {
           type: DataTypes.STRING,
           allowNull: false,
+          unique: true,
           validate: {
             is: /^\+[1-9]\d{1,14}$/, // E.164 format
           },

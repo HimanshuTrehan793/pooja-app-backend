@@ -7,6 +7,7 @@ import {
   DataTypes,
 } from "sequelize";
 import { Otp } from "./otp.model";
+import { CartItem } from "./cart.model";
 
 export class User extends Model<
   InferAttributes<User>,
@@ -69,5 +70,13 @@ export class User extends Model<
         indexes: [{ fields: ["phone_number"] }, { fields: ["email"] }],
       }
     );
+  }
+  
+  static associate() {
+    User.hasMany(CartItem, {
+      foreignKey: "user_id",
+      as: "cart_items",
+      onDelete: "CASCADE",
+    });
   }
 }

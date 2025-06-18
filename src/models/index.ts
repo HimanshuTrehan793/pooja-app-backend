@@ -9,6 +9,7 @@ import { Otp } from "./otp.model";
 import { Category } from "./category.model";
 import { Configuration } from "./configuration.model";
 import { AdBanner } from "./ad-banner.model";
+import { CartItem } from "./cart.model";
 
 const env: Env = "development";
 const dbConfig = config[env];
@@ -38,7 +39,8 @@ User.initModel(sequelize);
 Otp.initModel(sequelize);
 Category.initModel(sequelize);
 Configuration.initModel(sequelize);
-AdBanner.initModel(sequelize)
+AdBanner.initModel(sequelize);
+CartItem.initModel(sequelize);
 
 // Setup associations
 Product.associate();
@@ -46,6 +48,10 @@ ProductVariant.associate();
 Category.associate();
 Configuration.associate();
 AdBanner.associate();
+CartItem.associate();
+
+// setup hooks
+ProductVariant.setupHooks();
 
 export const db = {
   sequelize,
@@ -55,5 +61,6 @@ export const db = {
   Otp,
   Category,
   Configuration,
-  AdBanner
+  AdBanner,
+  CartItem,
 };

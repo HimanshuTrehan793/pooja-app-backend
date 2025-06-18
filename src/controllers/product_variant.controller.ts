@@ -9,7 +9,6 @@ import { HTTP_STATUS_CODES } from "../constants/httpsStatusCodes";
 import { sendResponse } from "../utils/sendResponse";
 import { db } from "../models";
 import { runInTransaction } from "../utils/transaction";
-import { Op } from "sequelize";
 
 export const createProductVariant = async (req: Request, res: Response) => {
   const {
@@ -194,7 +193,7 @@ export const deleteProductVariantById = async (req: Request, res: Response) => {
 
   sendResponse({
     res,
-    statusCode: HTTP_STATUS_CODES.NO_CONTENT,
+    statusCode: HTTP_STATUS_CODES.OK,
     message: "Product variant deleted successfully",
   });
 
