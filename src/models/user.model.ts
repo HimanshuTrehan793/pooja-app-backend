@@ -37,6 +37,8 @@ export class User extends Model<
             is: /^\+[1-9]\d{1,14}$/,
           },
         },
+
+        
         first_name: {
           type: DataTypes.STRING,
           allowNull: true,

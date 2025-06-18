@@ -10,6 +10,7 @@ import { Category } from "./category.model";
 import { Configuration } from "./configuration.model";
 import { AdBanner } from "./ad-banner.model";
 import { CartItem } from "./cart.model";
+import { UserAddress } from "./user-address.model";
 
 const env: Env = "development";
 const dbConfig = config[env];
@@ -42,6 +43,8 @@ Configuration.initModel(sequelize);
 AdBanner.initModel(sequelize);
 CartItem.initModel(sequelize);
 
+UserAddress.initModel(sequelize);
+
 // Setup associations
 Product.associate();
 ProductVariant.associate();
@@ -49,6 +52,7 @@ Category.associate();
 Configuration.associate();
 AdBanner.associate();
 CartItem.associate();
+UserAddress.associate();
 
 // setup hooks
 ProductVariant.setupHooks();
@@ -63,4 +67,5 @@ export const db = {
   Configuration,
   AdBanner,
   CartItem,
+  UserAddress,
 };
