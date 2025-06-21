@@ -25,9 +25,8 @@ export const createCouponSchema = z
   })
   .refine(
     (data) =>
-      data.discount_type === "percentage" &&
-      data.discount_value <= 100 &&
-      data.discount_value >= 0,
+      data.discount_type !== "percentage" ||
+      (data.discount_value <= 100 && data.discount_value >= 0),
     {
       message:
         "For percentage discount, discount_value must be between 0 and 100",
@@ -36,7 +35,7 @@ export const createCouponSchema = z
   )
   .refine(
     (data) =>
-      data.discount_type == "percentage" &&
+      data.discount_type !== "percentage" ||
       data.min_discount_value !== undefined,
     {
       path: ["min_discount_value"],
@@ -45,7 +44,7 @@ export const createCouponSchema = z
   )
   .refine(
     (data) =>
-      data.discount_type == "percentage" &&
+      data.discount_type !== "percentage" ||
       data.max_discount_value !== undefined,
     {
       path: ["max_discount_value"],
@@ -54,7 +53,7 @@ export const createCouponSchema = z
   )
   .refine(
     (data) =>
-      data.discount_type == "percentage" &&
+      data.discount_type !== "percentage" ||
       (data.min_discount_value ?? 0) <= (data.max_discount_value ?? 0),
     {
       path: ["min_discount_value"],
