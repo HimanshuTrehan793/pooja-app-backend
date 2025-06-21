@@ -151,7 +151,6 @@ export const updateProductVariant = async (req: Request, res: Response) => {
       });
     }
 
-    // Reload with associated categories to construct response
     return await db.ProductVariant.findByPk(productVariantId, {
       transaction: tx,
       include: [

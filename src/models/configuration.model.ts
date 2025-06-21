@@ -7,7 +7,7 @@ import {
   CreationOptional,
   Sequelize,
 } from "sequelize";
-import { AdBanner } from "./ad-banner.model";
+import { AdBanner } from "./adBanner.model";
 
 export class Configuration extends Model<
   InferAttributes<Configuration>,

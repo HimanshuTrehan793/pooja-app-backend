@@ -30,8 +30,6 @@ app.use(routes);
 
 app.use(errorHandler);
 
-
-
 async function startServer() {
   try {
     await db.sequelize.authenticate();

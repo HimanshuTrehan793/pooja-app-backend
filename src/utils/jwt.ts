@@ -25,6 +25,7 @@ const refreshTokenExpiry = getEnvVar(
 interface AccessTokenPayload {
   sub: string;
   phone_number: string;
+  role: ("admin" | "user");
 }
 
 interface RefreshTokenPayload {
@@ -33,11 +34,13 @@ interface RefreshTokenPayload {
 
 export function generateAccessToken(
   userId: string,
-  phone_number: string
+  phone_number: string,
+  role: "admin" | "user"
 ): string {
   const payload: AccessTokenPayload = {
     sub: userId,
     phone_number,
+    role
   };
 
   const options: SignOptions = {

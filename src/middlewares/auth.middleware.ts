@@ -10,6 +10,7 @@ declare global {
       user?: {
         id: string;
         phone_number: string;
+        role: "user" | "admin";
       };
     }
   }
@@ -49,7 +50,29 @@ export const authenticate = async (
   req.user = {
     id: user.id,
     phone_number: payload.phone_number,
+    role: user.role,
   };
 
   next();
+};
+
+export const allowRoles = (...roles: ("user" | "admin")[]) => {
+  return (req: Request, _res: Response, next: NextFunction) => {
+    if (!req.user) {
+      throw new ApiError(
+        "User not authenticated",
+        HttpStatusCode.UNAUTHORIZED,
+        "Authentication Failed"
+      );
+    }
+
+    if (!roles.includes(req.user.role)) {
+      throw new ApiError(
+        "User not authorized for this action",
+        HttpStatusCode.FORBIDDEN,
+        "Access Denied"
+      );
+    }
+    next();
+  };
 };

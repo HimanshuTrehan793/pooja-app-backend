@@ -20,6 +20,7 @@ export class User extends Model<
   declare gender: CreationOptional<string>;
   declare email: CreationOptional<string>;
   declare refresh_token: CreationOptional<string | null>;
+  declare role: CreationOptional<"user" | "admin">;
 
   static initModel(sequelize: Sequelize) {
     User.init(
@@ -37,8 +38,6 @@ export class User extends Model<
             is: /^\+[1-9]\d{1,14}$/,
           },
         },
-
-        
         first_name: {
           type: DataTypes.STRING,
           allowNull: true,
@@ -62,6 +61,11 @@ export class User extends Model<
           type: DataTypes.TEXT,
           allowNull: true,
         },
+        role: {
+          type: DataTypes.ENUM("user", "admin"),
+          allowNull: false,
+          defaultValue: "user",
+        },
       },
       {
         sequelize,
@@ -73,7 +77,7 @@ export class User extends Model<
       }
     );
   }
-  
+
   static associate() {
     User.hasMany(CartItem, {
       foreignKey: "user_id",

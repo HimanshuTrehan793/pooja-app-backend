@@ -13,15 +13,19 @@ import {
 } from "../validations/product.validation";
 import { schemaValidate } from "../middlewares/schemaValidate";
 import { catchAsync } from "../utils/catchAsync";
+import { allowRoles, authenticate } from "../middlewares/auth.middleware";
 
 const router = express.Router();
 
 router
   .route("/")
-  .get(
-    catchAsync(getAllProducts)
-  )
-  .post(schemaValidate(createProductSchema), catchAsync(createProduct));
+  .get(catchAsync(getAllProducts))
+  .post(
+    catchAsync(authenticate),
+    allowRoles("admin"),
+    schemaValidate(createProductSchema),
+    catchAsync(createProduct)
+  );
 
 router
   .route("/:id")

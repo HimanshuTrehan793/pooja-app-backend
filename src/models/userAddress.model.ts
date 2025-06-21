@@ -80,7 +80,7 @@ export class UserAddress extends Model<
       },
       {
         sequelize,
-        tableName: "users_addresses",
+        tableName: "user_addresses",
         timestamps: true,
         underscored: true,
         paranoid: true,

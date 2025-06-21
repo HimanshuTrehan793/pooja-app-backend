@@ -81,7 +81,7 @@ export const verifyOtpHandler = async (req: Request, res: Response) => {
       transaction: tx,
     });
 
-    const accessToken = generateAccessToken(user.id, phone_number);
+    const accessToken = generateAccessToken(user.id, phone_number, user.role);
     const refreshToken = generateRefreshToken(user.id);
 
     await user.update({ refresh_token: refreshToken }, { transaction: tx });
@@ -93,7 +93,7 @@ export const verifyOtpHandler = async (req: Request, res: Response) => {
     httpOnly: true,
     secure: getEnvVar("NODE_ENV") === "production",
     sameSite: "strict",
-    maxAge: 30 * 24 * 60 * 60 * 1000,
+    maxAge: 7 * 24 * 60 * 60 * 1000,
   });
 
   sendResponse({
@@ -135,7 +135,7 @@ export const refreshTokenHandler = async (req: Request, res: Response) => {
     );
   }
 
-  const accessToken = generateAccessToken(user.id, user.phone_number);
+  const accessToken = generateAccessToken(user.id, user.phone_number, user.role);
   const newRefreshToken = generateRefreshToken(user.id);
 
   await user.update({ refresh_token: newRefreshToken });

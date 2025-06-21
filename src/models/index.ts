@@ -1,4 +1,3 @@
-// models/index.ts
 import { Sequelize } from "sequelize";
 import config from "../config/database.config";
 import { Env } from "../interfaces/index";
@@ -8,9 +7,10 @@ import { User } from "./user.model";
 import { Otp } from "./otp.model";
 import { Category } from "./category.model";
 import { Configuration } from "./configuration.model";
-import { AdBanner } from "./ad-banner.model";
+import { AdBanner } from "./adBanner.model";
 import { CartItem } from "./cart.model";
-import { UserAddress } from "./user-address.model";
+import { UserAddress } from "./userAddress.model";
+import { Coupon } from "./coupon.model";
 
 const env: Env = "development";
 const dbConfig = config[env];
@@ -42,8 +42,8 @@ Category.initModel(sequelize);
 Configuration.initModel(sequelize);
 AdBanner.initModel(sequelize);
 CartItem.initModel(sequelize);
-
 UserAddress.initModel(sequelize);
+Coupon.initModel(sequelize);
 
 // Setup associations
 Product.associate();
@@ -54,7 +54,7 @@ AdBanner.associate();
 CartItem.associate();
 UserAddress.associate();
 
-// setup hooks
+// Setup hooks
 ProductVariant.setupHooks();
 
 export const db = {
@@ -68,4 +68,5 @@ export const db = {
   AdBanner,
   CartItem,
   UserAddress,
+  Coupon,
 };

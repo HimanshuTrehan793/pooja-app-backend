@@ -13,7 +13,7 @@ import { sendResponse } from "../utils/sendResponse";
 import axios from "axios";
 import { ApiError } from "../utils/apiError";
 import { HTTP_STATUS_CODES } from "../constants/httpsStatusCodes";
-import { UserAddress } from "../models/user-address.model";
+import { UserAddress } from "../models/userAddress.model";
 import { where } from "sequelize";
 import { db } from "../models";
 // Configure dotenv
