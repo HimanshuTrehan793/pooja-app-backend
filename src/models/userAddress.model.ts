@@ -83,7 +83,6 @@ export class UserAddress extends Model<
         tableName: "user_addresses",
         timestamps: true,
         underscored: true,
-        paranoid: true,
         indexes: [{ fields: ["phone_number"] }, { fields: ["user_id"] }],
       }
     );

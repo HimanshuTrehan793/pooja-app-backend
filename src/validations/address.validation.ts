@@ -28,7 +28,6 @@ export type SearchLocationQueryParams = z.infer<
 
 export const createAddressSchema = z
   .object({
-    user_id: z.string().uuid("Invalid user ID"),
 
     phone_number: z.string().regex(/^\+[1-9]\d{1,14}$/, {
       message: "Invalid phone number format (E.164 expected)",

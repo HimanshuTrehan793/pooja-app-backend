@@ -21,8 +21,8 @@ router
   .route("/")
   .get(catchAsync(getAllProducts))
   .post(
-    catchAsync(authenticate),
-    allowRoles("admin"),
+    // catchAsync(authenticate),
+    // allowRoles("admin"),
     schemaValidate(createProductSchema),
     catchAsync(createProduct)
   );

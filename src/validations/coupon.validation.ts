@@ -116,7 +116,7 @@ export const updateCouponSchema = z
   .refine(
     (data) =>
       data.discount_value == undefined ||
-      (data.discount_type == "percentage" &&
+      (data.discount_type != "percentage" ||
         data.discount_value <= 100 &&
         data.discount_value >= 0),
     {

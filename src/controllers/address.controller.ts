@@ -231,16 +231,29 @@ export const getSuggestedResults = async (req: Request, res: Response) => {
 };
 
 export const getUserAddresses = async (req: Request, res: Response) => {
-  const result = db.UserAddress.findAndCountAll({
+  if (!req.user) {
+    throw new ApiError(
+      "User not authenticated",
+      HTTP_STATUS_CODES.UNAUTHORIZED,
+      "Authentication Failed"
+    );
+  }
+
+  const { id: user_id } = req.user;
+  console.log(user_id);
+  const result = await db.UserAddress.findAndCountAll({
     where: {
-      user_id: "1234",
+      user_id: user_id,
     },
   });
+
+  console.log(result);
+
   if (result) {
     sendResponse({
       res,
       message: "Address fetched successfully",
-      data: result,
+      data: result.rows,
     });
   } else {
     return;
@@ -248,9 +261,19 @@ export const getUserAddresses = async (req: Request, res: Response) => {
 };
 
 export const addUserAddress = async (req: Request, res: Response) => {
+  if (!req.user) {
+    throw new ApiError(
+      "User not authenticated",
+      HTTP_STATUS_CODES.UNAUTHORIZED,
+      "Authentication Failed"
+    );
+  }
+
+  const { id: user_id } = req.user;
+
   const data = req.body as CreateAddressInput;
 
-  const result = db.UserAddress.create(data);
+  const result = await db.UserAddress.create({ ...data, user_id });
 
   if (result) {
     sendResponse({
