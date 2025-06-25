@@ -2,7 +2,6 @@ import { Response, Request } from "express";
 import { HTTP_STATUS_CODES } from "../constants/httpsStatusCodes";
 import { db } from "../models";
 import { sendResponse } from "../utils/sendResponse";
-import { ConfigurationInput } from "../validations/configuration.validation";
 
 const DEFAULT_CONFIG = {
   phone_number: "",
@@ -19,7 +18,6 @@ const DEFAULT_CONFIG = {
 export const getConfigurations = async (req: Request, res: Response) => {
   let configuration = await db.Configuration.findByPk(1);
 
-  //   If not present, create with default
   if (!configuration) {
     configuration = await db.Configuration.create({ id: 1, ...DEFAULT_CONFIG });
   }
@@ -33,9 +31,9 @@ export const getConfigurations = async (req: Request, res: Response) => {
     message: "Configuration fetched successfully",
     data: configuration,
   });
-}
+};
 
-export const  updateConfiguration = async (req: Request, res: Response) => {
+export const updateConfiguration = async (req: Request, res: Response) => {
   const updates = req.body;
 
   // Find or create config
@@ -54,7 +52,6 @@ export const  updateConfiguration = async (req: Request, res: Response) => {
     const existing = await db.AdBanner.findAll({
       where: { configuration_id: 1 },
     });
-    const existingMap = new Map(existing.map((b) => [b.id, b]));
 
     const incomingIds = ad_banners.filter((b) => b.id).map((b) => b.id);
 
@@ -65,23 +62,13 @@ export const  updateConfiguration = async (req: Request, res: Response) => {
       }
     }
 
-    // b. Upsert banners
-    for (const banner of ad_banners) {
-      if (banner.id && existingMap.has(banner.id)) {
-        // Update existing
-        await db.AdBanner.update(
-          { image: banner.image, action: banner.action },
-          { where: { id: banner.id } }
-        );
-      } else {
-        // Create new
-        await db.AdBanner.create({
-          image: banner.image,
-          action: banner.action,
-          configuration_id: 1,
-        });
-      }
+    for (let i = 0; i < ad_banners.length; i++) {
+      ad_banners[i].configuration_id = configuration.id;
     }
+
+    await db.AdBanner.bulkCreate(ad_banners, {
+      updateOnDuplicate: ["image", "action", "type"],
+    });
   }
 
   // 3. Return updated config (with banners)
@@ -95,4 +82,4 @@ export const  updateConfiguration = async (req: Request, res: Response) => {
     message: "Configuration updated successfully",
     data: fullConfig,
   });
-}
+};

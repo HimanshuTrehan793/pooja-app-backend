@@ -15,21 +15,27 @@ export class AdBanner extends Model<
 > {
   declare id: CreationOptional<number>;
   declare image: string;
+  declare type: CreationOptional<"home" | "category">;
   declare action: string;
   declare configuration_id: number;
+
   static initModel(sequelize: Sequelize) {
     AdBanner.init(
       {
         id: {
           type: DataTypes.UUID,
-          defaultValue: DataTypes.UUIDV4, // <-- This line is required!
-
+          defaultValue: DataTypes.UUIDV4,
           primaryKey: true,
           allowNull: false,
         },
         image: {
           type: DataTypes.STRING,
           allowNull: true,
+        },
+        type: {
+          type: DataTypes.ENUM("home", "category"),
+          allowNull: false,
+          defaultValue: "home",
         },
         action: {
           type: DataTypes.STRING,
