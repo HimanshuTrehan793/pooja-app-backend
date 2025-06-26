@@ -1,291 +1,172 @@
-import dotenv from "dotenv";
-import { Client } from "@googlemaps/google-maps-services-js";
-import { Request, Response } from "express"; // Import Response from express
-import { parseQueryParams } from "../utils/parseQueryParams";
-import {
-  CreateAddressInput,
-  getLocationQuerySchema,
-  getSearchLocationQuerySchema,
-  LocationQueryParams,
-  SearchLocationQueryParams,
-} from "../validations/address.validation";
-import { sendResponse } from "../utils/sendResponse";
-import axios from "axios";
+import { Request, Response } from "express";
 import { ApiError } from "../utils/apiError";
-import { HTTP_STATUS_CODES } from "../constants/httpsStatusCodes";
-import { UserAddress } from "../models/userAddress.model";
-import { where } from "sequelize";
+import { HttpStatusCode } from "../constants/httpStatusCodes";
 import { db } from "../models";
-// Configure dotenv
-dotenv.config();
-
-const googleMapsClient = new Client({});
-
-// Define interface for return type
-interface GeocodeResult {
-  success: boolean;
-  address?: string;
-  components?: any[];
-  error?: string;
-}
-interface ExtendedPrediction {
-  description: string;
-  place_id: string;
-  structured_formatting: {
-    main_text: string;
-    secondary_text: string;
-  };
-  lat?: number;
-  lng?: number;
-}
-interface AutocompleteResult {
-  success: boolean;
-  predictions?: any[];
-  error?: string;
-}
-
-const reverseGeocodeService = async (
-  lat: number,
-  lng: number
-): Promise<GeocodeResult> => {
-  try {
-    const response = await googleMapsClient.reverseGeocode({
-      params: {
-        latlng: { lat, lng },
-        key: process.env.GOOGLE_MAPS_API_KEY!,
-      },
-    });
-
-    if (response.data.status === "OK" && response.data.results.length > 0) {
-      return {
-        success: true,
-        address: response.data.results[0].formatted_address,
-        components: response.data.results[0].address_components,
-      };
-    }
-
-    return {
-      success: false,
-      error: "No address found for these coordinates",
-    };
-  } catch (error: any) {
-    return {
-      success: false,
-      error: error?.message || "Unknown error occurred",
-    };
-  }
-};
-
-// Reverse Geocoding Function with arrow syntax
-export const getAddressFromCoordinates = async (
-  req: Request,
-  res: Response
-) => {
-  const { lat, lng } = parseQueryParams(
-    getLocationQuerySchema,
-    req.query
-  ) as LocationQueryParams;
-
-  const result = await reverseGeocodeService(
-    parseFloat(lat.toString()),
-    parseFloat(lng.toString())
-  );
-
-  if (result.success) {
-    sendResponse({
-      res,
-      message: "Address fetched successfully",
-      data: result,
-    });
-  } else {
-    return;
-  }
-};
-
-export const getLatandLngFromAddress = async (req: Request, res: Response) => {
-  const address = req.query.address as string;
-
-  if (!address) {
-    throw new ApiError(
-      "Address not found",
-      HTTP_STATUS_CODES.NOT_FOUND,
-      "not found"
-    );
-  }
-
-  const apiKey = process.env.GOOGLE_MAPS_API_KEY;
-  const geocodeUrl = "https://maps.googleapis.com/maps/api/geocode/json";
-
-  const response = await axios.get(geocodeUrl, {
-    params: {
-      address,
-      key: apiKey,
-    },
-  });
-
-  const results = response.data.results;
-  if (!results || results.length === 0) {
-    throw new ApiError(
-      "No results found for this address",
-      HTTP_STATUS_CODES.NOT_FOUND,
-      "not found"
-    );
-  }
-
-  const location = results[0].geometry.location;
-
-  sendResponse({
-    res,
-    message: "Address fetched successfully",
-    data: {
-      formatted_address: results[0].formatted_address,
-      lat: location.lat,
-      lng: location.lng,
-    },
-  });
-};
-
-export const getPlaceAutocomplete = async (
-  input: string,
-  options?: {
-    language?: string;
-  }
-): Promise<AutocompleteResult> => {
-  try {
-    // Step 1: Get predictions
-    const autocompleteResponse = await googleMapsClient.placeAutocomplete({
-      params: {
-        input,
-        key: process.env.GOOGLE_MAPS_API_KEY!,
-        components: ["country:in"],
-        language: options?.language || "en",
-      },
-    });
-
-    if (autocompleteResponse.data.status !== "OK") {
-      return {
-        success: false,
-        error: autocompleteResponse.data.status,
-      };
-    }
-
-    const predictions = autocompleteResponse.data.predictions;
-
-    // Step 2: Enrich each prediction with lat/lng using placeDetails
-    const enrichedPredictions: ExtendedPrediction[] = await Promise.all(
-      predictions.map(async (prediction) => {
-        try {
-          const placeDetails = await googleMapsClient.placeDetails({
-            params: {
-              place_id: prediction.place_id,
-              key: process.env.GOOGLE_MAPS_API_KEY!,
-              fields: ["geometry"],
-            },
-          });
-
-          const location = placeDetails.data.result.geometry?.location;
-
-          return {
-            ...prediction,
-            lat: location?.lat,
-            lng: location?.lng,
-          };
-        } catch (err) {
-          console.warn(
-            `Error fetching details for place_id ${prediction.place_id}`
-          );
-          return { ...prediction }; // fallback without lat/lng
-        }
-      })
-    );
-
-    return {
-      success: true,
-      predictions: enrichedPredictions,
-    };
-  } catch (error: any) {
-    return {
-      success: false,
-      error: error?.message || "Unknown error occurred",
-    };
-  }
-};
-
-export const getSuggestedResults = async (req: Request, res: Response) => {
-  const { search } = parseQueryParams(
-    getSearchLocationQuerySchema,
-    req.query
-  ) as SearchLocationQueryParams;
-
-  const result = await getPlaceAutocomplete(search);
-
-  if (result.success) {
-    sendResponse({
-      res,
-      message: "Address fetched successfully",
-      data: result,
-    });
-  } else {
-    return;
-  }
-};
+import { sendResponse } from "../utils/sendResponse";
+import {
+  AddressIdParamsSchema,
+  createAddressSchema,
+  UpdateAddressSchema,
+} from "../validations/address.validation";
 
 export const getUserAddresses = async (req: Request, res: Response) => {
   if (!req.user) {
     throw new ApiError(
       "User not authenticated",
-      HTTP_STATUS_CODES.UNAUTHORIZED,
+      HttpStatusCode.UNAUTHORIZED,
       "Authentication Failed"
     );
   }
 
   const { id: user_id } = req.user;
-  console.log(user_id);
-  const result = await db.UserAddress.findAndCountAll({
+
+  const addresses = await db.Address.findAll({
     where: {
       user_id: user_id,
     },
   });
 
-  console.log(result);
+  sendResponse({
+    res,
+    message: "Addresses fetched successfully",
+    data: addresses,
+  });
 
-  if (result) {
-    sendResponse({
-      res,
-      message: "Address fetched successfully",
-      data: result.rows,
-    });
-  } else {
-    return;
-  }
+  return;
 };
 
-export const addUserAddress = async (req: Request, res: Response) => {
+export const createAddress = async (req: Request, res: Response) => {
   if (!req.user) {
     throw new ApiError(
       "User not authenticated",
-      HTTP_STATUS_CODES.UNAUTHORIZED,
+      HttpStatusCode.UNAUTHORIZED,
       "Authentication Failed"
     );
   }
 
   const { id: user_id } = req.user;
 
-  const data = req.body as CreateAddressInput;
+  const address: createAddressSchema = req.body;
 
-  const result = await db.UserAddress.create({ ...data, user_id });
+  const newAddress = await db.Address.create({ ...address, user_id });
 
-  if (result) {
-    sendResponse({
-      res,
-      message: "Address fetched successfully",
-      data: result,
-    });
-  } else {
+  sendResponse({
+    res,
+    message: "Address added successfully",
+    data: newAddress,
+  });
+
+  return;
+};
+
+export const getAddressById = async (req: Request, res: Response) => {
+  if (!req.user) {
     throw new ApiError(
-      "Address not added",
-      HTTP_STATUS_CODES.NOT_FOUND,
-      "not found"
+      "User not authenticated",
+      HttpStatusCode.UNAUTHORIZED,
+      "Authentication Failed"
     );
   }
+
+  const { id: user_id } = req.user;
+  const { id } = req.params as AddressIdParamsSchema;
+
+  const address = await db.Address.findOne({
+    where: {
+      id: id,
+      user_id: user_id,
+    },
+  });
+
+  if (!address) {
+    throw new ApiError(
+      "Address not found",
+      HttpStatusCode.NOT_FOUND,
+      "Address Not Found"
+    );
+  }
+
+  sendResponse({
+    res,
+    message: "Address fetched successfully",
+    data: address,
+  });
+
+  return;
+};
+
+export const updateAddress = async (req: Request, res: Response) => {
+  if (!req.user) {
+    throw new ApiError(
+      "User not authenticated",
+      HttpStatusCode.UNAUTHORIZED,
+      "Authentication Failed"
+    );
+  }
+
+  const { id: user_id } = req.user;
+  const { id } = req.params as AddressIdParamsSchema;
+  const updates: UpdateAddressSchema = req.body;
+
+  const address = await db.Address.findOne({
+    where: {
+      id: id,
+      user_id: user_id,
+    },
+  });
+
+  if (!address) {
+    throw new ApiError(
+      "Address not found",
+      HttpStatusCode.NOT_FOUND,
+      "Address Not Found"
+    );
+  }
+
+  await address.update(updates);
+
+  sendResponse({
+    res,
+    message: "Address updated successfully",
+    data: address,
+  });
+
+  return;
+};
+
+export const deleteAddressById = async (req: Request, res: Response) => {
+  if (!req.user) {
+    throw new ApiError(
+      "User not authenticated",
+      HttpStatusCode.UNAUTHORIZED,
+      "Authentication Failed"
+    );
+  }
+
+  const { id: user_id } = req.user;
+  const { id } = req.params as AddressIdParamsSchema;
+
+  const address = await db.Address.findOne({
+    where: {
+      id: id,
+      user_id: user_id,
+    },
+  });
+
+  if (!address) {
+    throw new ApiError(
+      "Address not found",
+      HttpStatusCode.NOT_FOUND,
+      "Address Not Found"
+    );
+  }
+
+  await address.destroy();
+
+  sendResponse({
+    res,
+    message: "Address deleted successfully",
+  });
+
+  return;
 };

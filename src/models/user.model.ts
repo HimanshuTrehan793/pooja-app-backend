@@ -6,8 +6,8 @@ import {
   Sequelize,
   DataTypes,
 } from "sequelize";
-import { Otp } from "./otp.model";
 import { CartItem } from "./cart.model";
+import { Address } from "./address.model";
 
 export class User extends Model<
   InferAttributes<User>,
@@ -82,6 +82,12 @@ export class User extends Model<
     User.hasMany(CartItem, {
       foreignKey: "user_id",
       as: "cart_items",
+      onDelete: "CASCADE",
+    });
+
+    User.hasMany(Address, {
+      foreignKey: "user_id",
+      as: "addresses",
       onDelete: "CASCADE",
     });
   }

@@ -6,14 +6,14 @@ import {
   Sequelize,
   DataTypes,
 } from "sequelize";
-import { User } from "./user.model";
 
 export class Otp extends Model<
   InferAttributes<Otp>,
   InferCreationAttributes<Otp>
 > {
   declare id: CreationOptional<string>;
-  declare phone_number: string;
+  declare contact: string;
+  declare contact_type: "phone" | "email";
   declare otp_code: string;
   declare created_at: CreationOptional<Date>;
   declare updated_at: CreationOptional<Date>;
@@ -26,13 +26,25 @@ export class Otp extends Model<
           defaultValue: DataTypes.UUIDV4,
           primaryKey: true,
         },
-        phone_number: {
+        contact: {
           type: DataTypes.STRING,
           allowNull: false,
           unique: true,
           validate: {
-            is: /^\+[1-9]\d{1,14}$/, // E.164 format
+            isValidContact(value: string) {
+              const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+              const isPhone = /^\+[1-9]\d{1,14}$/.test(value);
+              if (!isEmail && !isPhone) {
+                throw new Error(
+                  "Must be a valid email or phone number (E.164)"
+                );
+              }
+            },
           },
+        },
+        contact_type: {
+          type: DataTypes.ENUM("phone", "email"),
+          allowNull: false,
         },
         otp_code: {
           type: DataTypes.STRING,

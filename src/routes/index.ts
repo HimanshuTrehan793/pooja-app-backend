@@ -10,6 +10,8 @@ import assetRoutes from "./asset.route";
 import couponRoutes from "./coupon.route";
 import addressRoutes from "./address.route";
 import cartRoutes from "./cart.route";
+import mapRoutes from "./map.route";
+import userRoutes from "./user.route";
 
 const router = Router();
 
@@ -20,8 +22,10 @@ router.use("/api/categories", categoryRoutes);
 router.use("/api/sub-categories", subCategoryRoutes);
 router.use("/api/configurations", configurationRoutes);
 router.use("/api/assets", assetRoutes);
-router.use("/api/address", addressRoutes);
+router.use("/api/addresses", addressRoutes);
+router.use("/api/maps", mapRoutes);
 router.use("/api/cart-items", cartRoutes);
+router.use("/api/users", userRoutes);
 router.use("/api/coupons", couponRoutes);
 
 export default router;

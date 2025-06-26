@@ -9,8 +9,8 @@ import { Category } from "./category.model";
 import { Configuration } from "./configuration.model";
 import { AdBanner } from "./adBanner.model";
 import { CartItem } from "./cart.model";
-import { UserAddress } from "./userAddress.model";
 import { Coupon } from "./coupon.model";
+import { Address } from "./address.model";
 
 const env: Env = "development";
 const dbConfig = config[env];
@@ -42,17 +42,18 @@ Category.initModel(sequelize);
 Configuration.initModel(sequelize);
 AdBanner.initModel(sequelize);
 CartItem.initModel(sequelize);
-UserAddress.initModel(sequelize);
+Address.initModel(sequelize);
 Coupon.initModel(sequelize);
 
 // Setup associations
 Product.associate();
 ProductVariant.associate();
+User.associate();
 Category.associate();
 Configuration.associate();
 AdBanner.associate();
 CartItem.associate();
-UserAddress.associate();
+Address.associate();
 
 // Setup hooks
 ProductVariant.setupHooks();
@@ -67,6 +68,6 @@ export const db = {
   Configuration,
   AdBanner,
   CartItem,
-  UserAddress,
+  Address,
   Coupon,
 };

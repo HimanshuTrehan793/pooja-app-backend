@@ -27,7 +27,8 @@ export const sendOtpHandler = async (req: Request, res: Response) => {
   await sendSMS(phone_number, message);
 
   await db.Otp.upsert({
-    phone_number,
+    contact: phone_number,
+    contact_type: "phone",
     otp_code: hashedOtp,
   });
 
@@ -42,7 +43,10 @@ export const sendOtpHandler = async (req: Request, res: Response) => {
 export const verifyOtpHandler = async (req: Request, res: Response) => {
   const { phone_number, otp_code } = req.body;
 
-  const existingOtp = await db.Otp.findOne({ where: { phone_number } });
+  const existingOtp = await db.Otp.findOne({
+    where: { contact: phone_number, contact_type: "phone" },
+  });
+  
   if (!existingOtp) {
     throw new ApiError(
       "OTP not found. Please request a new one.",
@@ -135,7 +139,11 @@ export const refreshTokenHandler = async (req: Request, res: Response) => {
     );
   }
 
-  const accessToken = generateAccessToken(user.id, user.phone_number, user.role);
+  const accessToken = generateAccessToken(
+    user.id,
+    user.phone_number,
+    user.role
+  );
   const newRefreshToken = generateRefreshToken(user.id);
 
   await user.update({ refresh_token: newRefreshToken });

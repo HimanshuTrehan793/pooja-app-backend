@@ -9,23 +9,25 @@ import {
 } from "sequelize";
 import { User } from "./user.model";
 
-export class UserAddress extends Model<
-  InferAttributes<UserAddress>,
-  InferCreationAttributes<UserAddress>
+export class Address extends Model<
+  InferAttributes<Address>,
+  InferCreationAttributes<Address>
 > {
   declare id: CreationOptional<string>;
   declare user_id: ForeignKey<User["id"]>;
   declare phone_number: string;
   declare name: string;
-  declare address_line1: CreationOptional<string>;
-  declare address_line2: CreationOptional<string>;
-  declare landmark: CreationOptional<string>;
-  declare city: CreationOptional<string>;
-  declare state: CreationOptional<string>;
-  declare pincode: CreationOptional<string>;
+  declare city: string;
+  declare pincode: string;
+  declare state: string;
+  declare address_line1: string;
+  declare address_line2: string;
+  declare lat: number;
+  declare lng: number;
+  declare landmark: CreationOptional<string | null>;
 
   static initModel(sequelize: Sequelize) {
-    UserAddress.init(
+    Address.init(
       {
         id: {
           type: DataTypes.UUID,
@@ -37,17 +39,8 @@ export class UserAddress extends Model<
           allowNull: false,
           unique: true,
           validate: {
-            is: /^\+[1-9]\d{1,14}$/, // E.164 format
+            is: /^\+[1-9]\d{1,14}$/,
           },
-        },
-        user_id: {
-          type: DataTypes.UUID,
-          allowNull: false,
-          references: {
-            model: "users", // Table name, not model class
-            key: "id",
-          },
-          onDelete: "CASCADE", // Optional: delete addresses when user is deleted
         },
         name: {
           type: DataTypes.STRING,
@@ -55,32 +48,41 @@ export class UserAddress extends Model<
         },
         address_line1: {
           type: DataTypes.STRING,
-          allowNull: true,
+          allowNull: false,
         },
         address_line2: {
           type: DataTypes.STRING,
-          allowNull: true,
+          allowNull: false,
+        },
+        lat: {
+          type: DataTypes.FLOAT,
+          allowNull: false,
+        },
+        lng: {
+          type: DataTypes.FLOAT,
+          allowNull: false,
         },
         landmark: {
           type: DataTypes.STRING,
           allowNull: true,
+          defaultValue: null,
         },
         city: {
           type: DataTypes.STRING,
-          allowNull: true,
+          allowNull: false,
         },
         state: {
           type: DataTypes.STRING,
-          allowNull: true,
+          allowNull: false,
         },
         pincode: {
           type: DataTypes.STRING,
-          allowNull: true,
+          allowNull: false,
         },
       },
       {
         sequelize,
-        tableName: "user_addresses",
+        tableName: "addresses",
         timestamps: true,
         underscored: true,
         indexes: [{ fields: ["phone_number"] }, { fields: ["user_id"] }],
@@ -89,7 +91,7 @@ export class UserAddress extends Model<
   }
 
   static associate() {
-    UserAddress.belongsTo(User, {
+    Address.belongsTo(User, {
       foreignKey: "user_id",
       as: "user",
     });
