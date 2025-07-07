@@ -13,6 +13,7 @@ export const createCouponSchema = z
     end_date: z.coerce.date(),
     is_active: z.boolean().default(true),
     usage_limit_per_user: z.number().min(1).optional(),
+    offer_type: z.enum(["new_user", "all_users"]).default("all_users"),
   })
   .strict()
   .refine((data) => data.start_date < data.end_date, {

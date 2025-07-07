@@ -6,6 +6,7 @@ import {
   Model,
   Sequelize,
 } from "sequelize";
+import { OrderCoupon } from "./orderCoupon.model";
 
 export class Coupon extends Model<
   InferAttributes<Coupon>,
@@ -22,6 +23,7 @@ export class Coupon extends Model<
   declare start_date: Date;
   declare end_date: Date;
   declare is_active: boolean;
+  declare offer_type: "new_user" | "all_users";
   declare usage_limit_per_user: CreationOptional<number | null>;
 
   static initModel(sequelize: Sequelize) {
@@ -72,6 +74,11 @@ export class Coupon extends Model<
           type: DataTypes.DATE,
           allowNull: false,
         },
+        offer_type: {
+          type: DataTypes.ENUM("new_user", "all_users"),
+          allowNull: false,
+          defaultValue: "all_users",
+        },
         is_active: {
           type: DataTypes.BOOLEAN,
           allowNull: false,
@@ -103,5 +110,13 @@ export class Coupon extends Model<
         ],
       }
     );
+  }
+
+  static associate() {
+    Coupon.hasMany(OrderCoupon, {
+      foreignKey: "coupon_id",
+      as: "order_coupons",
+      onDelete: "CASCADE",
+    });
   }
 }

@@ -8,6 +8,7 @@ import {
   Sequelize,
 } from "sequelize";
 import { ProductVariant } from "./productVariant.model";
+import { OrderItem } from "./orderItem.model";
 
 export class Product extends Model<
   InferAttributes<Product>,
@@ -39,6 +40,11 @@ export class Product extends Model<
       foreignKey: "product_id",
       as: "product_variants",
       onDelete: "CASCADE",
+    });
+
+    Product.hasMany(OrderItem, {
+      foreignKey: "product_id",
+      as: "order_items",
     });
   }
 }

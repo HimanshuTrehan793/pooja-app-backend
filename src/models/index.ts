@@ -11,6 +11,12 @@ import { AdBanner } from "./adBanner.model";
 import { CartItem } from "./cart.model";
 import { Coupon } from "./coupon.model";
 import { Address } from "./address.model";
+import { OrderDetail } from "./orderDetail.model";
+import { OrderAddress } from "./orderAddress.model";
+import { OrderItem } from "./orderItem.model";
+import { OrderHistory } from "./orderHistory.model";
+import { OrderCoupon } from "./orderCoupon.model";
+import { PaymentDetail } from "./paymentDetail.model";
 
 const env: Env = "development";
 const dbConfig = config[env];
@@ -44,6 +50,12 @@ AdBanner.initModel(sequelize);
 CartItem.initModel(sequelize);
 Address.initModel(sequelize);
 Coupon.initModel(sequelize);
+OrderDetail.initModel(sequelize);
+OrderAddress.initModel(sequelize);
+OrderItem.initModel(sequelize);
+OrderHistory.initModel(sequelize);
+OrderCoupon.initModel(sequelize);
+PaymentDetail.initModel(sequelize);
 
 // Setup associations
 Product.associate();
@@ -54,6 +66,12 @@ Configuration.associate();
 AdBanner.associate();
 CartItem.associate();
 Address.associate();
+OrderDetail.associate();
+OrderAddress.associate();
+OrderItem.associate();
+OrderHistory.associate();
+OrderCoupon.associate();
+PaymentDetail.associate();
 
 // Setup hooks
 ProductVariant.setupHooks();
@@ -70,4 +88,10 @@ export const db = {
   CartItem,
   Address,
   Coupon,
+  OrderDetail,
+  OrderAddress,
+  OrderHistory,
+  OrderItem,
+  OrderCoupon,
+  PaymentDetail,
 };

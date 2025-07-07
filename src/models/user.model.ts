@@ -8,6 +8,8 @@ import {
 } from "sequelize";
 import { CartItem } from "./cart.model";
 import { Address } from "./address.model";
+import { OrderDetail } from "./orderDetail.model";
+import { OrderCoupon } from "./orderCoupon.model";
 
 export class User extends Model<
   InferAttributes<User>,
@@ -88,6 +90,18 @@ export class User extends Model<
     User.hasMany(Address, {
       foreignKey: "user_id",
       as: "addresses",
+      onDelete: "CASCADE",
+    });
+
+    User.hasMany(OrderDetail, {
+      foreignKey: "user_id",
+      as: "order_details",
+      onDelete: "CASCADE",
+    });
+
+    User.hasMany(OrderCoupon, {
+      foreignKey: "user_id",
+      as: "order_coupons",
       onDelete: "CASCADE",
     });
   }

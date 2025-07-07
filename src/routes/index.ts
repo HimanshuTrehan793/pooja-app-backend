@@ -12,6 +12,7 @@ import addressRoutes from "./address.route";
 import cartRoutes from "./cart.route";
 import mapRoutes from "./map.route";
 import userRoutes from "./user.route";
+import orderRoutes from "./order.route";
 
 const router = Router();
 
@@ -27,5 +28,6 @@ router.use("/api/maps", mapRoutes);
 router.use("/api/cart-items", cartRoutes);
 router.use("/api/users", userRoutes);
 router.use("/api/coupons", couponRoutes);
+router.use("/api/orders",  orderRoutes);
 
 export default router;

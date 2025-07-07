@@ -1,4 +1,3 @@
-// models/productVariant.model.ts
 import {
   Model,
   DataTypes,
@@ -12,6 +11,7 @@ import {
 import { Product } from "./product.model";
 import { Category } from "./category.model";
 import { CartItem } from "./cart.model";
+import { OrderItem } from "./orderItem.model";
 
 export class ProductVariant extends Model<
   InferAttributes<ProductVariant>,
@@ -53,7 +53,7 @@ export class ProductVariant extends Model<
           type: DataTypes.UUID,
           allowNull: false,
         },
-        display_label: { 
+        display_label: {
           type: DataTypes.STRING,
           allowNull: false,
         },
@@ -131,6 +131,11 @@ export class ProductVariant extends Model<
       foreignKey: "product_variant_id",
       as: "cart_items",
       onDelete: "CASCADE",
+    });
+
+    ProductVariant.hasMany(OrderItem, {
+      foreignKey: "product_variant_id",
+      as: "order_items",
     });
   }
 

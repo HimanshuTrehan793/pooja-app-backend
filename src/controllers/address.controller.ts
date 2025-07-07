@@ -8,6 +8,7 @@ import {
   createAddressSchema,
   UpdateAddressSchema,
 } from "../validations/address.validation";
+import { runInTransaction } from "../utils/transaction";
 
 export const getUserAddresses = async (req: Request, res: Response) => {
   if (!req.user) {
@@ -48,7 +49,21 @@ export const createAddress = async (req: Request, res: Response) => {
 
   const address: createAddressSchema = req.body;
 
-  const newAddress = await db.Address.create({ ...address, user_id });
+  const newAddress = await runInTransaction(async (tx) => {
+    if (address.is_default) {
+      await db.Address.update(
+        { is_default: false },
+        { where: { user_id: user_id, is_default: true }, transaction: tx }
+      );
+    }
+
+    const newAddress = await db.Address.create(
+      { ...address, user_id },
+      { transaction: tx }
+    );
+
+    return newAddress;
+  });
 
   sendResponse({
     res,
@@ -108,27 +123,38 @@ export const updateAddress = async (req: Request, res: Response) => {
   const { id } = req.params as AddressIdParamsSchema;
   const updates: UpdateAddressSchema = req.body;
 
-  const address = await db.Address.findOne({
-    where: {
-      id: id,
-      user_id: user_id,
-    },
+  const updatedAddress = await runInTransaction(async (tx) => {
+    const address = await db.Address.findOne({
+      where: {
+        id: id,
+        user_id: user_id,
+      },
+    });
+
+    if (!address) {
+      throw new ApiError(
+        "Address not found",
+        HttpStatusCode.NOT_FOUND,
+        "Address Not Found"
+      );
+    }
+
+    if (updates.is_default) {
+      await db.Address.update(
+        { is_default: false },
+        { where: { user_id: user_id, is_default: true }, transaction: tx }
+      );
+    }
+
+    await address.update(updates, { transaction: tx });
+
+    return address;
   });
-
-  if (!address) {
-    throw new ApiError(
-      "Address not found",
-      HttpStatusCode.NOT_FOUND,
-      "Address Not Found"
-    );
-  }
-
-  await address.update(updates);
 
   sendResponse({
     res,
     message: "Address updated successfully",
-    data: address,
+    data: updatedAddress,
   });
 
   return;

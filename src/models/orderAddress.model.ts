@@ -1,22 +1,22 @@
 import {
   CreationOptional,
+  DataTypes,
+  ForeignKey,
   InferAttributes,
   InferCreationAttributes,
   Model,
   Sequelize,
-  DataTypes,
-  ForeignKey,
 } from "sequelize";
-import { User } from "./user.model";
+import { OrderDetail } from "./orderDetail.model";
 
-export class Address extends Model<
-  InferAttributes<Address>,
-  InferCreationAttributes<Address>
+export class OrderAddress extends Model<
+  InferAttributes<OrderAddress>,
+  InferCreationAttributes<OrderAddress>
 > {
   declare id: CreationOptional<string>;
-  declare user_id: ForeignKey<User["id"]>;
-  declare phone_number: string;
+  declare order_id: ForeignKey<OrderDetail["id"]>;
   declare name: string;
+  declare phone_number: string;
   declare city: string;
   declare pincode: string;
   declare state: string;
@@ -24,11 +24,10 @@ export class Address extends Model<
   declare address_line2: string;
   declare lat: number;
   declare lng: number;
-  declare is_default: boolean;
   declare landmark: CreationOptional<string | null>;
 
   static initModel(sequelize: Sequelize) {
-    Address.init(
+    OrderAddress.init(
       {
         id: {
           type: DataTypes.UUID,
@@ -62,10 +61,6 @@ export class Address extends Model<
           type: DataTypes.FLOAT,
           allowNull: false,
         },
-        is_default: {
-          type: DataTypes.BOOLEAN,
-          allowNull: false,
-        },
         landmark: {
           type: DataTypes.STRING,
           allowNull: true,
@@ -86,18 +81,17 @@ export class Address extends Model<
       },
       {
         sequelize,
-        tableName: "addresses",
+        tableName: "order_addresses",
         timestamps: true,
         underscored: true,
-        indexes: [{ fields: ["phone_number"] }, { fields: ["user_id"] }],
       }
     );
   }
 
   static associate() {
-    Address.belongsTo(User, {
-      foreignKey: "user_id",
-      as: "user",
+    OrderAddress.belongsTo(OrderDetail, {
+      foreignKey: "order_id",
+      as: "order_detail",
     });
   }
 }

@@ -6,18 +6,16 @@ import {
   deleteAddressById,
   getAddressById,
   getUserAddresses,
+  updateAddress,
 } from "../controllers/address.controller";
 import { authenticate } from "../middlewares/auth.middleware";
 import {
   addressIdParamsSchema,
   createAddressSchema,
+  updateAddressSchema,
 } from "../validations/address.validation";
 
 const router = express.Router();
-
-// router.route("/").get(catchAsync(getSuggestedResults));
-
-// router.route("/current-location").get(catchAsync(getAddressFromCoordinates));
 
 router
   .route("/")
@@ -38,8 +36,8 @@ router
   .patch(
     catchAsync(authenticate),
     schemaValidate(addressIdParamsSchema, "params"),
-    schemaValidate(createAddressSchema),
-    catchAsync(createAddress)
+    schemaValidate(updateAddressSchema),
+    catchAsync(updateAddress)
   )
   .delete(
     catchAsync(authenticate),

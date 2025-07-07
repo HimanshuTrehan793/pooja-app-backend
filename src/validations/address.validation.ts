@@ -40,6 +40,7 @@ export const createAddressSchema = z
     lat: z.number().min(-90).max(90),
     lng: z.number().min(-180).max(180),
     landmark: z.string().nullable().optional().default(null),
+    is_default: z.boolean(),
   })
   .strict();
 
@@ -70,6 +71,7 @@ export const updateAddressSchema = z
     address_line2: z.string().min(10).optional(),
     lat: z.number().min(-90).max(90).optional(),
     lng: z.number().min(-180).max(180).optional(),
+    is_default: z.boolean().optional(),
     landmark: z.string().nullable().optional().default(null),
   })
   .strict()
@@ -84,6 +86,7 @@ export const updateAddressSchema = z
       data.address_line2 !== undefined ||
       data.lat !== undefined ||
       data.lng !== undefined ||
+      data.is_default !== undefined ||
       data.landmark !== undefined,
     {
       message: "At least one field must be provided for update.",
