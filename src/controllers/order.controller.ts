@@ -15,6 +15,7 @@ import { runInTransaction } from "../utils/transaction";
 import { createRazorpayOrder } from "../services/payment.service";
 import { getEnvVar } from "../utils/getEnvVar";
 import { createHmac } from "crypto";
+import { Op } from "sequelize";
 
 const validateOrderItems = async (items: CreateOrderBody["items"]) => {
   const quantityMap = new Map(
@@ -215,10 +216,34 @@ export const getUserAllOrders = async (req: Request, res: Response) => {
   const offset = (page - 1) * limit;
 
   const { count, rows: orders } = await db.OrderDetail.findAndCountAll({
-    where: { user_id },
+    where: {
+      user_id,
+      "$payment_details.status$": {
+        [Op.not]: "created",
+      },
+    },
+    include: [
+      {
+        model: db.OrderItem,
+        as: "order_items",
+        include: [
+          {
+            model: db.ProductVariant,
+            as: "product_variant",
+            attributes: ["name", "images", "display_label"],
+          },
+          {
+            model: db.PaymentDetail,
+            as: "payment_details",
+            attributes: ["status", "amount", "currency", "method"],
+          },
+        ],
+      },
+    ],
     offset,
-    limit: Number(limit),
-    order: [["created_at", "DESC"]],
+    limit,
+    order: [["createdAt", "DESC"]],
+    distinct: true,
   });
 
   const meta = calculatePagination(count, page, limit);

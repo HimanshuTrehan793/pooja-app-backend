@@ -26,7 +26,7 @@ export const productVariantSchema = z
     description: z.string().min(1),
     mrp: z.number().min(0),
     price: z.number().min(0),
-    image: z.array(z.string().url()).nonempty(),
+    images: z.array(z.string().url()).nonempty(),
     brand_name: z.string().optional().default(""),
     out_of_stock: z.boolean(),
     default_variant: z.boolean().optional().default(false),

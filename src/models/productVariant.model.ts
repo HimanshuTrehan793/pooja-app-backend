@@ -24,7 +24,7 @@ export class ProductVariant extends Model<
   declare description: string;
   declare mrp: number;
   declare price: number;
-  declare image: string[];
+  declare images: string[];
   declare brand_name: string;
   declare out_of_stock: boolean;
   declare default_variant: boolean;
@@ -73,7 +73,7 @@ export class ProductVariant extends Model<
           type: DataTypes.FLOAT,
           allowNull: false,
         },
-        image: {
+        images: {
           type: DataTypes.ARRAY(DataTypes.STRING),
           allowNull: false,
         },
