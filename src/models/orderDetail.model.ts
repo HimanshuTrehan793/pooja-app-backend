@@ -13,6 +13,7 @@ import { OrderItem } from "./orderItem.model";
 import { OrderHistory } from "./orderHistory.model";
 import { OrderCoupon } from "./orderCoupon.model";
 import { PaymentDetail } from "./paymentDetail.model";
+import { OrderCharge } from "./orderCharge.model";
 
 export class OrderDetail extends Model<
   InferAttributes<OrderDetail>,
@@ -126,6 +127,12 @@ export class OrderDetail extends Model<
       foreignKey: "order_id",
       as: "payment_details",
       onDelete: "CASCADE",
-    })
+    });
+
+    OrderDetail.hasMany(OrderCharge, {
+      foreignKey: "order_id",
+      as: "order_charges",
+      onDelete: "CASCADE",
+    });
   }
 }

@@ -17,6 +17,7 @@ import { OrderItem } from "./orderItem.model";
 import { OrderHistory } from "./orderHistory.model";
 import { OrderCoupon } from "./orderCoupon.model";
 import { PaymentDetail } from "./paymentDetail.model";
+import { OrderCharge } from "./orderCharge.model";
 
 const env: Env = "development";
 const dbConfig = config[env];
@@ -56,6 +57,7 @@ OrderItem.initModel(sequelize);
 OrderHistory.initModel(sequelize);
 OrderCoupon.initModel(sequelize);
 PaymentDetail.initModel(sequelize);
+OrderCharge.initModel(sequelize);
 
 // Setup associations
 Product.associate();
@@ -72,6 +74,7 @@ OrderItem.associate();
 OrderHistory.associate();
 OrderCoupon.associate();
 PaymentDetail.associate();
+OrderCharge.associate();
 
 // Setup hooks
 ProductVariant.setupHooks();
@@ -94,4 +97,5 @@ export const db = {
   OrderItem,
   OrderCoupon,
   PaymentDetail,
+  OrderCharge,
 };

@@ -271,7 +271,7 @@ export const createOrder = async (req: Request, res: Response) => {
   }
 
   const { id: user_id } = req.user;
-  const { items, address_id, offer_codes }: CreateOrderBody = req.body;
+  const { items, address_id, offer_codes, charges }: CreateOrderBody = req.body;
 
   const validatedAddress = await db.Address.findOne({
     where: { id: address_id, user_id },
@@ -309,7 +309,15 @@ export const createOrder = async (req: Request, res: Response) => {
   }
 
   const totalCouponDiscount = couponsData?.totalCouponDiscount ?? 0;
-  const finalAmount = Math.max(0, totalAmount - totalCouponDiscount);
+  const totalCharges = charges
+    ? charges.reduce((acc, cv) => {
+        return acc + cv.amount;
+      }, 0)
+    : 0;
+  const finalAmount = Math.max(
+    0,
+    totalAmount - totalCouponDiscount + totalCharges
+  );
 
   const RazorpayOrder = await createRazorpayOrder(finalAmount, "INR");
 
@@ -324,6 +332,13 @@ export const createOrder = async (req: Request, res: Response) => {
       },
       { transaction: tx }
     );
+
+    if (charges) {
+      await db.OrderCharge.bulkCreate(
+        charges.map((charge) => ({ ...charge, order_id: orderDetail.id })),
+        { transaction: tx }
+      );
+    }
 
     await db.OrderItem.bulkCreate(
       validatedProducts.map((variant) => {
@@ -386,7 +401,7 @@ export const createOrder = async (req: Request, res: Response) => {
       {
         status: "created",
         order_id: orderDetail.id,
-        amount: totalAmount,
+        amount: finalAmount,
         currency: "INR",
         razorpay_order_id: RazorpayOrder.id,
       },
@@ -547,6 +562,11 @@ export const getOrderById = async (req: Request, res: Response) => {
           "discount_type",
           "createdAt",
         ],
+      },
+      {
+        model: db.OrderCharge,
+        as: "order_charges",
+        attributes: ["name", "amount"],
       },
     ],
   });
