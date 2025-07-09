@@ -27,7 +27,9 @@ export class PaymentDetail extends Model<
     | "paid";
   declare amount: number;
   declare currency: string;
-  declare method: CreationOptional<"card" | "netbanking" | "upi" | "wallet" | "cod" | null>;
+  declare method: CreationOptional<
+    "card" | "netbanking" | "upi" | "wallet" | "cod" | null
+  >;
 
   static initModel(sequelize: Sequelize) {
     PaymentDetail.init(

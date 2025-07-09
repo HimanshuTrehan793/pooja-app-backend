@@ -226,24 +226,27 @@ export const getUserAllOrders = async (req: Request, res: Response) => {
       {
         model: db.OrderItem,
         as: "order_items",
+        attributes: ["quantity", "price", "mrp", "product_variant_id"],
         include: [
           {
             model: db.ProductVariant,
             as: "product_variant",
             attributes: ["name", "images", "display_label"],
           },
-          {
-            model: db.PaymentDetail,
-            as: "payment_details",
-            attributes: ["status", "amount", "currency", "method"],
-          },
         ],
+      },
+      {
+        model: db.PaymentDetail,
+        as: "payment_details",
+        attributes: ["status", "amount", "currency", "method"],
+        required: true,
       },
     ],
     offset,
     limit,
     order: [["createdAt", "DESC"]],
     distinct: true,
+    subQuery: false,
   });
 
   const meta = calculatePagination(count, page, limit);
@@ -478,6 +481,88 @@ export const verifyPayment = async (req: Request, res: Response) => {
   sendResponse({
     res,
     message: "Payment verified successfully",
+  });
+
+  return;
+};
+
+export const getOrderById = async (req: Request, res: Response) => {
+  if (!req.user) {
+    throw new ApiError(
+      "User not authenticated",
+      HttpStatusCode.UNAUTHORIZED,
+      "Authentication Failed"
+    );
+  }
+
+  const { id: user_id } = req.user;
+  const { id: orderId } = req.params as { id: string };
+
+  const order = await db.OrderDetail.findOne({
+    where: { id: orderId, user_id },
+    include: [
+      {
+        model: db.OrderItem,
+        as: "order_items",
+        attributes: ["quantity", "price", "mrp", "product_variant_id"],
+        include: [
+          {
+            model: db.ProductVariant,
+            as: "product_variant",
+            attributes: ["name", "images", "display_label"],
+          },
+        ],
+      },
+      {
+        model: db.PaymentDetail,
+        as: "payment_details",
+        attributes: ["status", "amount", "currency", "method"],
+      },
+      {
+        model: db.OrderAddress,
+        as: "order_address",
+        attributes: [
+          "name",
+          "phone_number",
+          "city",
+          "pincode",
+          "state",
+          "address_line1",
+          "address_line2",
+          "landmark",
+        ],
+      },
+      {
+        model: db.OrderHistory,
+        as: "order_histories",
+        attributes: ["status", "comment", "updated_by", "createdAt"],
+        order: [["createdAt", "DESC"]],
+      },
+      {
+        model: db.OrderCoupon,
+        as: "order_coupons",
+        attributes: [
+          "offer_code",
+          "discount_amount",
+          "discount_type",
+          "createdAt",
+        ],
+      },
+    ],
+  });
+
+  if (!order) {
+    throw new ApiError(
+      "Order not found",
+      HttpStatusCode.NOT_FOUND,
+      `Order with ID ${orderId} not found for the user`
+    );
+  }
+
+  sendResponse({
+    res,
+    message: "Order fetched successfully",
+    data: order,
   });
 
   return;

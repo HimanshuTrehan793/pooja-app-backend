@@ -32,3 +32,9 @@ export const verifyPaymentSchema = z.object({
 });
 
 export type VerifyPaymentBody = z.infer<typeof verifyPaymentSchema>;
+
+export const orderIdParamSchema = z.object({
+  id: z.string().uuid("Invalid order ID"),
+});
+
+export type OrderIdParam = z.infer<typeof orderIdParamSchema>;
