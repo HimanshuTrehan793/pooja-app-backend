@@ -21,7 +21,7 @@ import {
 } from "../services/payment.service";
 import { getEnvVar } from "../utils/getEnvVar";
 import { createHmac } from "crypto";
-import { Op, Order, WhereOptions } from "sequelize";
+import { Includeable, Op, Order, WhereOptions } from "sequelize";
 
 const validateOrderItems = async (items: CreateOrderBody["items"]) => {
   const quantityMap = new Map(
@@ -535,62 +535,77 @@ export const getOrderById = async (req: Request, res: Response) => {
   const { id: user_id } = req.user;
   const { id: orderId } = req.params as { id: string };
 
+  const where: WhereOptions = { id: orderId };
+  if (req.user.role == "user") {
+    where.user_id = user_id;
+  }
+
+  const includeOptions: Includeable[] = [
+    {
+      model: db.OrderItem,
+      as: "order_items",
+      attributes: ["quantity", "price", "mrp", "product_variant_id"],
+      include: [
+        {
+          model: db.ProductVariant,
+          as: "product_variant",
+          attributes: ["name", "images", "display_label"],
+        },
+      ],
+    },
+    {
+      model: db.PaymentDetail,
+      as: "payment_details",
+      attributes: ["status", "amount", "currency", "method"],
+    },
+    {
+      model: db.OrderAddress,
+      as: "order_address",
+      attributes: [
+        "name",
+        "phone_number",
+        "city",
+        "pincode",
+        "state",
+        "address_line1",
+        "address_line2",
+        "landmark",
+      ],
+    },
+    {
+      model: db.OrderHistory,
+      as: "order_histories",
+      attributes: ["status", "comment", "updated_by", "createdAt"],
+      order: [["createdAt", "DESC"]], // This is correct for sorting the nested items
+    },
+    {
+      model: db.OrderCoupon,
+      as: "order_coupons",
+      attributes: [
+        "offer_code",
+        "discount_amount",
+        "discount_type",
+        "createdAt",
+      ],
+    },
+    {
+      model: db.OrderCharge,
+      as: "order_charges",
+      attributes: ["name", "amount"],
+    },
+  ];
+
+  if (req.user.role === "admin") {
+    includeOptions.push({
+      model: db.User,
+      as: "user",
+      attributes: ["id", "first_name", "last_name", "email", "phone_number"],
+    });
+  }
+
   const order = await db.OrderDetail.findOne({
-    where: { id: orderId, user_id },
-    include: [
-      {
-        model: db.OrderItem,
-        as: "order_items",
-        attributes: ["quantity", "price", "mrp", "product_variant_id"],
-        include: [
-          {
-            model: db.ProductVariant,
-            as: "product_variant",
-            attributes: ["name", "images", "display_label"],
-          },
-        ],
-      },
-      {
-        model: db.PaymentDetail,
-        as: "payment_details",
-        attributes: ["status", "amount", "currency", "method"],
-      },
-      {
-        model: db.OrderAddress,
-        as: "order_address",
-        attributes: [
-          "name",
-          "phone_number",
-          "city",
-          "pincode",
-          "state",
-          "address_line1",
-          "address_line2",
-          "landmark",
-        ],
-      },
-      {
-        model: db.OrderHistory,
-        as: "order_histories",
-        attributes: ["status", "comment", "updated_by", "createdAt"],
-        order: [["createdAt", "DESC"]],
-      },
-      {
-        model: db.OrderCoupon,
-        as: "order_coupons",
-        attributes: [
-          "offer_code",
-          "discount_amount",
-          "discount_type",
-          "createdAt",
-        ],
-      },
-      {
-        model: db.OrderCharge,
-        as: "order_charges",
-        attributes: ["name", "amount"],
-      },
-    ],
+    where,
+    include: includeOptions,
   });
 
   if (!order) {
