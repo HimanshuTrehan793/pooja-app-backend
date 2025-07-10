@@ -25,3 +25,43 @@ export const createRazorpayOrder = async (amount: number, currency: string) => {
     );
   }
 };
+
+export const getRazorpayOrder = async (orderId: string) => {
+  try {
+    const order = await razorpay.orders.fetch(orderId);
+    if (!order) {
+      throw new ApiError(
+        "Razorpay order not found",
+        HttpStatusCode.NOT_FOUND,
+        "Razorpay Error"
+      );
+    }
+    return order;
+  } catch {
+    throw new ApiError(
+      "Failed to fetch Razorpay order",
+      HttpStatusCode.INTERNAL_SERVER_ERROR,
+      "Razorpay Error"
+    );
+  }
+};
+
+export const getRazorpayPayment = async (paymentId: string) => {
+  try {
+    const payment = await razorpay.payments.fetch(paymentId);
+    if (!payment) {
+      throw new ApiError(
+        "Razorpay payment not found",
+        HttpStatusCode.NOT_FOUND,
+        "Razorpay Error"
+      );
+    }
+    return payment;
+  } catch {
+    throw new ApiError(
+      "Failed to fetch Razorpay payment",
+      HttpStatusCode.INTERNAL_SERVER_ERROR,
+      "Razorpay Error"
+    );
+  }
+};

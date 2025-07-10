@@ -2,6 +2,8 @@ import { Request, Response } from "express";
 import { parseQueryParams } from "../utils/parseQueryParams";
 import {
   CreateOrderBody,
+  GetAllOrdersQuery,
+  getAllOrdersQuerySchema,
   getOrderQuerySchema,
   OrderQueryParams,
   VerifyPaymentBody,
@@ -12,10 +14,14 @@ import { db } from "../models";
 import { calculatePagination } from "../utils/pagination";
 import { sendResponse } from "../utils/sendResponse";
 import { runInTransaction } from "../utils/transaction";
-import { createRazorpayOrder } from "../services/payment.service";
+import {
+  createRazorpayOrder,
+  getRazorpayOrder,
+  getRazorpayPayment,
+} from "../services/payment.service";
 import { getEnvVar } from "../utils/getEnvVar";
 import { createHmac } from "crypto";
-import { Op } from "sequelize";
+import { Op, Order, WhereOptions } from "sequelize";
 
 const validateOrderItems = async (items: CreateOrderBody["items"]) => {
   const quantityMap = new Map(
@@ -460,6 +466,20 @@ export const verifyPayment = async (req: Request, res: Response) => {
     );
   }
 
+  const razorpayOrder = await getRazorpayOrder(razorpay_order_id);
+  const razorpayPayment = await getRazorpayPayment(razorpay_payment_id);
+
+  if (
+    razorpayOrder.status !== "paid" ||
+    razorpayPayment.status !== "captured"
+  ) {
+    throw new ApiError(
+      "Payment not captured",
+      HttpStatusCode.BAD_REQUEST,
+      "Payment verification failed. Razorpay order or payment status is not valid."
+    );
+  }
+
   await runInTransaction(async (tx) => {
     const paymentDetail = await db.PaymentDetail.findOne({
       where: { razorpay_order_id },
@@ -485,6 +505,8 @@ export const verifyPayment = async (req: Request, res: Response) => {
     paymentDetail.status = "captured";
     paymentDetail.razorpay_signature = razorpay_signature;
     paymentDetail.razorpay_payment_id = razorpay_payment_id;
+    paymentDetail.method = razorpayPayment.method;
+
     await paymentDetail.save({ transaction: tx });
 
     await db.CartItem.destroy({
@@ -583,6 +605,72 @@ export const getOrderById = async (req: Request, res: Response) => {
     res,
     message: "Order fetched successfully",
     data: order,
+  });
+
+  return;
+};
+
+export const getAllOrders = async (req: Request, res: Response) => {
+  if (!req.user) {
+    throw new ApiError(
+      "User not authorized",
+      HttpStatusCode.FORBIDDEN,
+      "You do not have permission to access this resource"
+    );
+  }
+
+  const { page, limit, status, user_id, order_number } = parseQueryParams(
+    getAllOrdersQuerySchema,
+    req.query
+  ) as GetAllOrdersQuery;
+
+  const offset = (page - 1) * limit;
+
+  const where: WhereOptions = {};
+  let order: Order = [["createdAt", "DESC"]];
+
+  if (status) {
+    where.status = { [Op.in]: status };
+  }
+  if (user_id) {
+    where.user_id = user_id;
+  }
+  if (order_number) {
+    where.order_number = db.sequelize.where(
+      db.sequelize.cast(db.sequelize.col("order_number"), "TEXT"),
+      { [Op.iLike]: `${order_number}%` }
+    );
+
+    order = [["order_number", "ASC"]];
+  }
+
+  const { count, rows: orders } = await db.OrderDetail.findAndCountAll({
+    where,
+    include: [
+      {
+        model: db.PaymentDetail,
+        as: "payment_details",
+        attributes: ["status", "amount", "currency", "method"],
+      },
+      {
+        model: db.User,
+        as: "user",
+        attributes: ["id", "first_name", "last_name", "email", "phone_number"],
+      },
+    ],
+    offset,
+    limit,
+    order,
+    distinct: true,
+  });
+
+  const meta = calculatePagination(count, page, limit);
+
+  sendResponse({
+    res,
+    message: "Orders fetched successfully",
+    data: orders,
+    meta,
   });
 
   return;

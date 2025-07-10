@@ -47,3 +47,37 @@ export const orderIdParamSchema = z.object({
 });
 
 export type OrderIdParam = z.infer<typeof orderIdParamSchema>;
+
+export const getAllOrdersQuerySchema = z.object({
+  page: z.preprocess((val) => Number(val), z.number().min(1).default(1)),
+  limit: z.preprocess(
+    (val) => Number(val),
+    z.number().min(1).max(100).default(30)
+  ),
+  status: z
+    .preprocess(
+      (val) => (typeof val === "string" ? val.split(",") : val),
+      z.array(
+        z.enum([
+          "pending",
+          "accepted",
+          "processing",
+          "packed",
+          "shipped",
+          "out_for_delivery",
+          "delivered",
+          "cancelled",
+          "rejected",
+          "returned",
+          "refunded",
+        ])
+      )
+    )
+    .optional(),
+  user_id: z.string().uuid().optional(),
+  order_number: z
+    .preprocess((val) => Number(val), z.number().min(1).optional())
+    .optional(),
+});
+
+export type GetAllOrdersQuery = z.infer<typeof getAllOrdersQuerySchema>;

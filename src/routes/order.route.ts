@@ -1,8 +1,9 @@
 import { Router } from "express";
-import { authenticate } from "../middlewares/auth.middleware";
+import { allowRoles, authenticate } from "../middlewares/auth.middleware";
 import { catchAsync } from "../utils/catchAsync";
 import {
   createOrder,
+  getAllOrders,
   getOrderById,
   getUserAllOrders,
   verifyPayment,
@@ -24,6 +25,10 @@ router
     schemaValidate(createOrderSchema),
     catchAsync(createOrder)
   );
+  
+router
+  .route("/all")
+  .get(catchAsync(authenticate), allowRoles("admin"), catchAsync(getAllOrders));
 
 router
   .route("/:id")

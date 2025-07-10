@@ -27,9 +27,7 @@ export class PaymentDetail extends Model<
     | "paid";
   declare amount: number;
   declare currency: string;
-  declare method: CreationOptional<
-    "card" | "netbanking" | "upi" | "wallet" | "cod" | null
-  >;
+  declare method: CreationOptional<string | null>;
 
   static initModel(sequelize: Sequelize) {
     PaymentDetail.init(
@@ -77,7 +75,7 @@ export class PaymentDetail extends Model<
           defaultValue: "INR",
         },
         method: {
-          type: DataTypes.ENUM("card", "netbanking", "upi", "wallet", "cod"),
+          type: DataTypes.STRING,
           allowNull: true,
           defaultValue: null,
         },
