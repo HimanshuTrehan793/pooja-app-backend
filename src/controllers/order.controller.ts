@@ -573,13 +573,15 @@ export const getOrderById = async (req: Request, res: Response) => {
         "address_line1",
         "address_line2",
         "landmark",
+        "lat",
+        "lng",
       ],
     },
     {
       model: db.OrderHistory,
       as: "order_histories",
       attributes: ["status", "comment", "updated_by", "createdAt"],
-      order: [["createdAt", "DESC"]], // This is correct for sorting the nested items
+      order: [["createdAt", "DESC"]],
     },
     {
       model: db.OrderCoupon,
@@ -796,7 +798,7 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
       </div>
     </div>
   `;
-  
+
     await sendEmail(order.user.email, subject, html);
   }
 
