@@ -5,6 +5,7 @@ import {
   InferAttributes,
   InferCreationAttributes,
   Model,
+  NonAttribute,
   Sequelize,
 } from "sequelize";
 import { User } from "./user.model";
@@ -19,6 +20,7 @@ export class OrderDetail extends Model<
   InferAttributes<OrderDetail>,
   InferCreationAttributes<OrderDetail>
 > {
+  // --- DATABASE COLUMNS ---
   declare id: CreationOptional<string>;
   declare user_id: ForeignKey<User["id"]>;
   declare status:
@@ -37,6 +39,15 @@ export class OrderDetail extends Model<
   declare delivered_at: CreationOptional<Date | null>;
   declare expected_delivery_date: Date;
   declare cancellation_reason: CreationOptional<string | null>;
+
+  // --- ASSOCIATIONS ---
+  declare user?: NonAttribute<User>;
+  declare order_items?: NonAttribute<OrderItem[]>;
+  declare order_address?: NonAttribute<OrderAddress>;
+  declare order_histories?: NonAttribute<OrderHistory[]>;
+  declare order_coupons?: NonAttribute<OrderCoupon[]>;
+  declare payment_details?: NonAttribute<PaymentDetail>;
+  declare order_charges?: NonAttribute<OrderCharge[]>;
 
   static initModel(sequelize: Sequelize) {
     OrderDetail.init(

@@ -81,3 +81,21 @@ export const getAllOrdersQuerySchema = z.object({
 });
 
 export type GetAllOrdersQuery = z.infer<typeof getAllOrdersQuerySchema>;
+
+export const updateOrderStatusSchema = z.object({
+  status: z.enum([
+    "accepted",
+    "processing",
+    "packed",
+    "shipped",
+    "out_for_delivery",
+    "delivered",
+    "cancelled",
+    "rejected",
+    "returned",
+    "refunded",
+  ]),
+  comment: z.string().min(1).optional(),
+});
+
+export type UpdateOrderStatusBody = z.infer<typeof updateOrderStatusSchema>;

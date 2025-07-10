@@ -6,12 +6,14 @@ import {
   getAllOrders,
   getOrderById,
   getUserAllOrders,
+  updateOrderStatus,
   verifyPayment,
 } from "../controllers/order.controller";
 import { schemaValidate } from "../middlewares/schemaValidate";
 import {
   createOrderSchema,
   orderIdParamSchema,
+  updateOrderStatusSchema,
   verifyPaymentSchema,
 } from "../validations/order.validation";
 
@@ -25,7 +27,7 @@ router
     schemaValidate(createOrderSchema),
     catchAsync(createOrder)
   );
-  
+
 router
   .route("/all")
   .get(catchAsync(authenticate), allowRoles("admin"), catchAsync(getAllOrders));
@@ -36,6 +38,16 @@ router
     catchAsync(authenticate),
     schemaValidate(orderIdParamSchema, "params"),
     catchAsync(getOrderById)
+  );
+
+router
+  .route("/:id/status")
+  .patch(
+    catchAsync(authenticate),
+    schemaValidate(orderIdParamSchema, "params"),
+    allowRoles("admin"),
+    schemaValidate(updateOrderStatusSchema),
+    catchAsync(updateOrderStatus)
   );
 
 router.post(

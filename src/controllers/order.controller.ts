@@ -5,7 +5,9 @@ import {
   GetAllOrdersQuery,
   getAllOrdersQuerySchema,
   getOrderQuerySchema,
+  OrderIdParam,
   OrderQueryParams,
+  UpdateOrderStatusBody,
   VerifyPaymentBody,
 } from "../validations/order.validation";
 import { ApiError } from "../utils/apiError";
@@ -22,6 +24,7 @@ import {
 import { getEnvVar } from "../utils/getEnvVar";
 import { createHmac } from "crypto";
 import { Includeable, Op, Order, WhereOptions } from "sequelize";
+import { sendEmail } from "../services/email.service";
 
 const validateOrderItems = async (items: CreateOrderBody["items"]) => {
   const quantityMap = new Map(
@@ -686,6 +689,120 @@ export const getAllOrders = async (req: Request, res: Response) => {
     message: "Orders fetched successfully",
     data: orders,
     meta,
+  });
+
+  return;
+};
+
+export const updateOrderStatus = async (req: Request, res: Response) => {
+  if (!req.user) {
+    throw new ApiError(
+      "User not authenticated",
+      HttpStatusCode.UNAUTHORIZED,
+      "Authentication Failed"
+    );
+  }
+
+  const { id: orderId } = req.params as OrderIdParam;
+  const { status, comment }: UpdateOrderStatusBody = req.body;
+
+  const order = await db.OrderDetail.findOne({
+    where: { id: orderId },
+    include: [
+      {
+        model: db.User,
+        as: "user",
+        attributes: ["id", "first_name", "last_name", "email", "phone_number"],
+      },
+    ],
+  });
+
+  if (!order) {
+    throw new ApiError(
+      "Order not found",
+      HttpStatusCode.NOT_FOUND,
+      `Order with ID ${orderId} not found`
+    );
+  }
+
+  if (order.status === status) {
+    throw new ApiError(
+      "No status change",
+      HttpStatusCode.BAD_REQUEST,
+      `Order is already in "${status}" status`
+    );
+  }
+
+  await runInTransaction(async (tx) => {
+    order.status = status;
+
+    if (status === "delivered") {
+      order.delivered_at = new Date();
+    } else if (status === "cancelled" || status === "rejected") {
+      order.cancellation_reason = comment ?? null;
+    }
+
+    await order.save({ transaction: tx });
+
+    await db.OrderHistory.create(
+      {
+        order_id: order.id,
+        status,
+        comment: comment ?? null,
+        updated_by: "admin",
+      },
+      { transaction: tx }
+    );
+  });
+
+  if (order.user?.email) {
+    const subject = `Update on your order #${order.order_number}`;
+    const html = `
+    <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+      <div style="max-width: 580px; margin: 20px auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px;">
+        
+        <h1 style="font-size: 22px; margin-top: 0;">Order Status Update</h1>
+        
+        <p>Hi ${order.user.first_name || "Valued Customer"},</p>
+        
+        <p>Your order <strong>#${
+          order.order_number
+        }</strong> has been updated.</p>
+        
+        <p><strong>New Status:</strong> ${
+          status.charAt(0).toUpperCase() + status.slice(1).replace(/_/g, " ")
+        }</p>
+        
+        ${
+          comment
+            ? `
+          <div style="background-color: #f7f7f7; padding: 15px; border-radius: 4px; margin-top: 15px;">
+            <p style="margin: 0;"><strong>A note from our team:</strong><br>${comment}</p>
+          </div>
+        `
+            : ""
+        }
+        
+        <p style="margin-top: 25px;">Thank you for shopping with us!</p>
+        
+        <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+        
+        <p style="font-size: 12px; color: #888;">
+          If you have any questions, please reply to this email.
+          <br>
+          &copy; ${new Date().getFullYear()} Your Company Name
+        </p>
+        
+      </div>
+    </div>
+  `;
+  
+    await sendEmail(order.user.email, subject, html);
+  }
+
+  sendResponse({
+    res,
+    message: `Order status updated to "${status}" successfully`,
   });
 
   return;
