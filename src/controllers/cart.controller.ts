@@ -205,11 +205,19 @@ export const incrementDecrementCartItemQuantity = async (
       productVariant.max_quantity &&
       newQuantity > productVariant.max_quantity
     ) {
-      newQuantity = productVariant.max_quantity;
+      throw new ApiError(
+        `Max quantity per order is ${productVariant.max_quantity}`,
+        HttpStatusCode.BAD_REQUEST,
+        "Max quantity exceeded"
+      );
     }
 
     if (newQuantity > productVariant.total_available_quantity) {
-      newQuantity = productVariant.total_available_quantity;
+      throw new ApiError(
+        `Requested quantity not available. Only ${productVariant.total_available_quantity} in stock.`,
+        HttpStatusCode.BAD_REQUEST,
+        "Insufficient stock"
+      );
     }
   } else if (action === "decrease") {
     newQuantity -= quantity;
