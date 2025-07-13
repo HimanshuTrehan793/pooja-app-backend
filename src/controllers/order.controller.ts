@@ -440,6 +440,13 @@ export const createOrder = async (req: Request, res: Response) => {
       { transaction: tx }
     );
 
+    if (method == "cod") {
+      await db.CartItem.destroy({
+        where: { user_id },
+        transaction: tx,
+      });
+    }
+
     return RazorpayOrder;
   });
 
