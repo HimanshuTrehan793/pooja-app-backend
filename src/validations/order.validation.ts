@@ -20,6 +20,7 @@ export const createOrderSchema = z
     ),
     offer_codes: z.array(z.string()).optional(),
     address_id: z.string().uuid(),
+    method: z.enum(["cod", "online"]),
     charges: z
       .array(
         z.object({

@@ -282,7 +282,8 @@ export const createOrder = async (req: Request, res: Response) => {
   }
 
   const { id: user_id } = req.user;
-  const { items, address_id, offer_codes, charges }: CreateOrderBody = req.body;
+  const { items, address_id, offer_codes, charges, method }: CreateOrderBody =
+    req.body;
 
   const validatedAddress = await db.Address.findOne({
     where: { id: address_id, user_id },
@@ -330,7 +331,16 @@ export const createOrder = async (req: Request, res: Response) => {
     totalAmount - totalCouponDiscount + totalCharges
   );
 
-  const RazorpayOrder = await createRazorpayOrder(finalAmount, "INR");
+  if (finalAmount <= 0) {
+    throw new ApiError(
+      "Invalid order amount",
+      HttpStatusCode.BAD_REQUEST,
+      "Order total cannot be zero or negative"
+    );
+  }
+
+  let RazorpayOrder =
+    method === "online" ? await createRazorpayOrder(finalAmount, "INR") : null;
 
   await runInTransaction(async (tx) => {
     const orderDetail = await db.OrderDetail.create(
@@ -414,7 +424,8 @@ export const createOrder = async (req: Request, res: Response) => {
         order_id: orderDetail.id,
         amount: finalAmount,
         currency: "INR",
-        razorpay_order_id: RazorpayOrder.id,
+        razorpay_order_id: RazorpayOrder ? RazorpayOrder.id : null,
+        method: RazorpayOrder ? null : "cod",
       },
       { transaction: tx }
     );
