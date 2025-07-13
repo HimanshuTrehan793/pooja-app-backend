@@ -22,7 +22,7 @@ export class Configuration extends Model<
   declare delivery_time: number;
   declare delivery_radius: number;
   declare announcement_text?: string;
-
+  declare is_cod_eligible: CreationOptional<boolean>;
   static initModel(sequelize: Sequelize) {
     Configuration.init(
       {
@@ -45,6 +45,11 @@ export class Configuration extends Model<
           allowNull: false,
           defaultValue: true,
         },
+        is_cod_eligible: {
+          type: DataTypes.BOOLEAN,
+          allowNull: false,
+          defaultValue: true,
+        },
         min_order_amount: {
           type: DataTypes.INTEGER,
           allowNull: false,
@@ -55,7 +60,7 @@ export class Configuration extends Model<
           allowNull: false,
           defaultValue: 0,
         },
-         delivery_radius: {
+        delivery_radius: {
           type: DataTypes.STRING,
           allowNull: true,
         },
@@ -78,9 +83,9 @@ export class Configuration extends Model<
     );
   }
   static associate() {
-  Configuration.hasMany(AdBanner, {
-    foreignKey: 'configuration_id',
-    as: 'ad_banners',
-  });
-}
+    Configuration.hasMany(AdBanner, {
+      foreignKey: "configuration_id",
+      as: "ad_banners",
+    });
+  }
 }

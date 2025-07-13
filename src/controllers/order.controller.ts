@@ -186,6 +186,12 @@ const validateCouponCodeForUser = async (
           coupon.max_discount_value
         );
       }
+      if (coupon.min_discount_value) {
+        discountForThisCoupon = Math.max(
+          discountForThisCoupon,
+          coupon.min_discount_value
+        );
+      }
     } else if (coupon.discount_type === "fixed") {
       discountForThisCoupon = coupon.discount_value;
     }
@@ -420,7 +426,7 @@ export const createOrder = async (req: Request, res: Response) => {
 
     await db.PaymentDetail.create(
       {
-        status: "created",
+        status: method == "online" ? "created" : "pending",
         order_id: orderDetail.id,
         amount: finalAmount,
         currency: "INR",

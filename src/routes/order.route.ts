@@ -43,19 +43,19 @@ router.post(
 );
 
 router
-  .route("/download-invoice/:id")
-  .get(
-    catchAsync(authenticate),
-    schemaValidate(orderIdParamSchema, "params"),
-    catchAsync(downloadInvoice)
-  );
-
-router
   .route("/:id")
   .get(
     catchAsync(authenticate),
     schemaValidate(orderIdParamSchema, "params"),
     catchAsync(getOrderById)
+  );
+
+router
+  .route("/:id/invoice")
+  .get(
+    catchAsync(authenticate),
+    schemaValidate(orderIdParamSchema, "params"),
+    catchAsync(downloadInvoice)
   );
 
 router
