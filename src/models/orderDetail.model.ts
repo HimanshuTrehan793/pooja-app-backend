@@ -38,7 +38,6 @@ export class OrderDetail extends Model<
   declare order_number: CreationOptional<number>;
   declare delivered_at: CreationOptional<Date | null>;
   declare expected_delivery_date: Date;
-  declare cancellation_reason: CreationOptional<string | null>;
 
   // --- ASSOCIATIONS ---
   declare user?: NonAttribute<User>;
@@ -88,11 +87,6 @@ export class OrderDetail extends Model<
         expected_delivery_date: {
           type: DataTypes.DATE,
           allowNull: false,
-        },
-        cancellation_reason: {
-          type: DataTypes.TEXT,
-          allowNull: true,
-          defaultValue: null,
         },
       },
       {

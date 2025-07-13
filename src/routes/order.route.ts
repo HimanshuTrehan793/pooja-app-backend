@@ -2,6 +2,7 @@ import { Router } from "express";
 import { allowRoles, authenticate } from "../middlewares/auth.middleware";
 import { catchAsync } from "../utils/catchAsync";
 import {
+  cancelOrder,
   createOrder,
   downloadInvoice,
   getAllOrders,
@@ -12,6 +13,7 @@ import {
 } from "../controllers/order.controller";
 import { schemaValidate } from "../middlewares/schemaValidate";
 import {
+  cancelOrderSchema,
   createOrderSchema,
   orderIdParamSchema,
   updateOrderStatusSchema,
@@ -32,6 +34,13 @@ router
 router
   .route("/all")
   .get(catchAsync(authenticate), allowRoles("admin"), catchAsync(getAllOrders));
+
+router.post(
+  "/payment-verification",
+  catchAsync(authenticate),
+  schemaValidate(verifyPaymentSchema),
+  catchAsync(verifyPayment)
+);
 
 router
   .route("/download-invoice/:id")
@@ -59,11 +68,13 @@ router
     catchAsync(updateOrderStatus)
   );
 
-router.post(
-  "/payment-verification",
-  catchAsync(authenticate),
-  schemaValidate(verifyPaymentSchema),
-  catchAsync(verifyPayment)
-);
+router
+  .route("/:id/cancel")
+  .post(
+    catchAsync(authenticate),
+    schemaValidate(orderIdParamSchema, "params"),
+    schemaValidate(cancelOrderSchema),
+    catchAsync(cancelOrder)
+  );
 
 export default router;

@@ -100,3 +100,9 @@ export const updateOrderStatusSchema = z.object({
 });
 
 export type UpdateOrderStatusBody = z.infer<typeof updateOrderStatusSchema>;
+
+export const cancelOrderSchema = z.object({
+  reason: z.string().min(1).max(500),
+});
+
+export type CancelOrderBody = z.infer<typeof cancelOrderSchema>;

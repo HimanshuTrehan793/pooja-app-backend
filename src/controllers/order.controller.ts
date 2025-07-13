@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { parseQueryParams } from "../utils/parseQueryParams";
 import {
+  CancelOrderBody,
   CreateOrderBody,
   GetAllOrdersQuery,
   getAllOrdersQuerySchema,
@@ -742,8 +743,6 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
 
     if (status === "delivered") {
       order.delivered_at = new Date();
-    } else if (status === "cancelled" || status === "rejected") {
-      order.cancellation_reason = comment ?? null;
     }
 
     await order.save({ transaction: tx });
@@ -807,6 +806,63 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
   sendResponse({
     res,
     message: `Order status updated to "${status}" successfully`,
+  });
+
+  return;
+};
+
+export const cancelOrder = async (req: Request, res: Response) => {
+  if (!req.user) {
+    throw new ApiError(
+      "User not authenticated",
+      HttpStatusCode.UNAUTHORIZED,
+      "Authentication Failed"
+    );
+  }
+
+  const { id: orderId } = req.params as OrderIdParam;
+  const { reason }: CancelOrderBody = req.body;
+
+  const order = await db.OrderDetail.findOne({
+    where: { id: orderId, user_id: req.user.id },
+  });
+
+  if (!order) {
+    throw new ApiError(
+      "Order not found",
+      HttpStatusCode.NOT_FOUND,
+      `Order with ID ${orderId} not found for the user`
+    );
+  }
+
+  if (order.status !== "pending") {
+    throw new ApiError(
+      "Order cannot be cancelled",
+      HttpStatusCode.BAD_REQUEST,
+      `Order with ID ${orderId} cannot be cancelled as it is in "${order.status}" status`
+    );
+  }
+
+  await runInTransaction(async (tx) => {
+    order.status = "cancelled";
+    await order.save({ transaction: tx });
+
+    await db.OrderHistory.create(
+      {
+        order_id: order.id,
+        status: "cancelled",
+        comment: reason,
+        updated_by: "user",
+      },
+      { transaction: tx }
+    );
+  });
+
+  sendResponse({
+    res,
+    message: `Order with ID ${
+      order.order_number + 1000
+    } has been cancelled successfully`,
   });
 
   return;
