@@ -25,6 +25,7 @@ import { getEnvVar } from "../utils/getEnvVar";
 import { createHmac } from "crypto";
 import { Includeable, Op, Order, WhereOptions } from "sequelize";
 import { sendEmail } from "../services/email.service";
+import { downloadInvoicePdf } from "../services/pdf.service";
 
 const validateOrderItems = async (items: CreateOrderBody["items"]) => {
   const quantityMap = new Map(
@@ -639,10 +640,8 @@ export const getAllOrders = async (req: Request, res: Response) => {
     );
   }
 
-  const { page, limit, status, user_id, order_number } = parseQueryParams(
-    getAllOrdersQuerySchema,
-    req.query
-  ) as GetAllOrdersQuery;
+  const { page, limit, status, user_id, order_number, phone_number } =
+    parseQueryParams(getAllOrdersQuerySchema, req.query) as GetAllOrdersQuery;
 
   const offset = (page - 1) * limit;
 
@@ -654,6 +653,9 @@ export const getAllOrders = async (req: Request, res: Response) => {
   }
   if (user_id) {
     where.user_id = user_id;
+  }
+  if (phone_number) {
+    where["$user.phone_number$"] = { [Op.like]: `%${phone_number}%` };
   }
   if (order_number) {
     where.order_number = db.sequelize.where(
@@ -768,7 +770,7 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
         <p>Hi ${order.user.first_name || "Valued Customer"},</p>
         
         <p>Your order <strong>#${
-          order.order_number
+          order.order_number + 1000
         }</strong> has been updated.</p>
         
         <p><strong>New Status:</strong> ${
@@ -808,4 +810,99 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
   });
 
   return;
+};
+
+export const downloadInvoice = async (req: Request, res: Response) => {
+  if (!req.user) {
+    throw new ApiError(
+      "User not authenticated",
+      HttpStatusCode.UNAUTHORIZED,
+      "Authentication Failed"
+    );
+  }
+
+  const { id: user_id } = req.user;
+  const { id: orderId } = req.params as { id: string };
+
+  const where: WhereOptions = { id: orderId };
+  where.user_id = user_id;
+
+  where.user_id = user_id;
+  const includeOptions: Includeable[] = [
+    {
+      model: db.OrderItem,
+      as: "order_items",
+      attributes: ["quantity", "price", "mrp", "product_variant_id"],
+      include: [
+        {
+          model: db.ProductVariant,
+          as: "product_variant",
+          attributes: ["name", "images", "display_label"],
+        },
+      ],
+    },
+    {
+      model: db.PaymentDetail,
+      as: "payment_details",
+      attributes: ["status", "amount", "currency", "method"],
+    },
+    {
+      model: db.OrderAddress,
+      as: "order_address",
+      attributes: [
+        "name",
+        "phone_number",
+        "city",
+        "pincode",
+        "state",
+        "address_line1",
+        "address_line2",
+        "landmark",
+        "lat",
+        "lng",
+      ],
+    },
+    {
+      model: db.OrderHistory,
+      as: "order_histories",
+      attributes: ["status", "comment", "updated_by", "createdAt"],
+      order: [["createdAt", "DESC"]],
+    },
+    {
+      model: db.OrderCoupon,
+      as: "order_coupons",
+      attributes: [
+        "offer_code",
+        "discount_amount",
+        "discount_type",
+        "createdAt",
+      ],
+    },
+    {
+      model: db.OrderCharge,
+      as: "order_charges",
+      attributes: ["name", "amount"],
+    },
+  ];
+
+  includeOptions.push({
+    model: db.User,
+    as: "user",
+    attributes: ["id", "first_name", "last_name", "email", "phone_number"],
+  });
+
+  const order = await db.OrderDetail.findOne({
+    where,
+    include: includeOptions,
+  });
+
+  if (!order) {
+    throw new ApiError(
+      "Order not found",
+      HttpStatusCode.NOT_FOUND,
+      `Failed to Download Pdf`
+    );
+  }
+
+  await downloadInvoicePdf(res, order);
 };

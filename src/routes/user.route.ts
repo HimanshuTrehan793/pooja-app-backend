@@ -1,7 +1,8 @@
 import express from "express";
 import { catchAsync } from "../utils/catchAsync";
-import { authenticate } from "../middlewares/auth.middleware";
+import { allowRoles, authenticate } from "../middlewares/auth.middleware";
 import {
+  getAllusers,
   getUserDetails,
   sendOtpToUpdateEmail,
   updateUserDetails,
@@ -24,6 +25,10 @@ router
     schemaValidate(updateUserBodySchema),
     catchAsync(updateUserDetails)
   );
+
+router
+  .route("/all")
+  .get(catchAsync(authenticate), allowRoles("admin"), catchAsync(getAllusers));
 
 router
   .route("/email/otp")

@@ -5,6 +5,7 @@ import {
   InferAttributes,
   InferCreationAttributes,
   Model,
+  NonAttribute,
 } from "sequelize";
 import { OrderDetail } from "./orderDetail.model";
 import { Product } from "./product.model";
@@ -21,6 +22,9 @@ export class OrderItem extends Model<
   declare quantity: number;
   declare price: number;
   declare mrp: number;
+
+  // --- ASSOCIATIONS ---
+  declare product_variant?: NonAttribute<ProductVariant>;
 
   static initModel(sequelize: any) {
     OrderItem.init(

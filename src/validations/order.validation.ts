@@ -78,6 +78,7 @@ export const getAllOrdersQuerySchema = z.object({
   order_number: z
     .preprocess((val) => Number(val), z.number().min(1).optional())
     .optional(),
+  phone_number: z.string().regex(/^[6-9]\d{9}$/).optional(),
 });
 
 export type GetAllOrdersQuery = z.infer<typeof getAllOrdersQuerySchema>;

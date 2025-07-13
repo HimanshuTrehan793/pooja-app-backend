@@ -4,6 +4,8 @@ import { HttpStatusCode } from "../constants/httpStatusCodes";
 import { db } from "../models";
 import { sendResponse } from "../utils/sendResponse";
 import {
+  getAllUserQuerySchema,
+  GetAllUsersQuery,
   UpdateEmailBodySchema,
   UpdateUserBodySchema,
 } from "../validations/user.validation";
@@ -12,6 +14,9 @@ import { getEnvVar } from "../utils/getEnvVar";
 import { compareOtp, hashOtp } from "../utils/hash";
 import { sendEmail } from "../services/email.service";
 import { runInTransaction } from "../utils/transaction";
+import { calculatePagination } from "../utils/pagination";
+import { parseQueryParams } from "../utils/parseQueryParams";
+import { Op, WhereOptions } from "sequelize";
 
 const otpExpiryMinutes = parseInt(getEnvVar("OTP_EXPIRES_IN_MINUTES"));
 
@@ -25,7 +30,14 @@ export const getUserDetails = async (req: Request, res: Response) => {
   }
 
   const user = await db.User.findByPk(req.user.id, {
-    attributes: ["id", "phone_number", "first_name", "last_name", "gender", "email"],
+    attributes: [
+      "id",
+      "phone_number",
+      "first_name",
+      "last_name",
+      "gender",
+      "email",
+    ],
   });
 
   sendResponse({
@@ -47,7 +59,14 @@ export const updateUserDetails = async (req: Request, res: Response) => {
   const { ...updates }: UpdateUserBodySchema = req.body;
 
   const user = await db.User.findByPk(req.user.id, {
-    attributes: ["id", "phone_number", "first_name", "last_name", "gender", "email"],
+    attributes: [
+      "id",
+      "phone_number",
+      "first_name",
+      "last_name",
+      "gender",
+      "email",
+    ],
   });
   if (!user) {
     throw new ApiError("User not found", HttpStatusCode.NOT_FOUND, "not found");
@@ -129,7 +148,14 @@ export const updateUserEmail = async (req: Request, res: Response) => {
   }
 
   const user = await db.User.findByPk(req.user.id, {
-    attributes: ["id", "phone_number", "first_name", "last_name", "gender", "email"],
+    attributes: [
+      "id",
+      "phone_number",
+      "first_name",
+      "last_name",
+      "gender",
+      "email",
+    ],
   });
 
   if (!user) {
@@ -185,5 +211,51 @@ export const updateUserEmail = async (req: Request, res: Response) => {
     res,
     data: user,
     message: "Email updated successfully",
+  });
+};
+
+export const getAllusers = async (req: Request, res: Response) => {
+  if (!req.user) {
+    throw new ApiError(
+      "User not authorized",
+      HttpStatusCode.FORBIDDEN,
+      "You do not have permission to access this resource"
+    );
+  }
+
+  const { page, limit, phone_number } = parseQueryParams(
+    getAllUserQuerySchema,
+    req.query
+  ) as GetAllUsersQuery;
+
+  const where: WhereOptions = {};
+  const offset = (page - 1) * limit;
+
+  if (phone_number) {
+    where.phone_number = { [Op.iLike]: `%${phone_number}%` };
+  }
+
+  const { count, rows: users } = await db.User.findAndCountAll({
+    where,
+    distinct: true,
+    limit: Number(limit),
+    offset,
+    attributes: [
+      "id",
+      "phone_number",
+      "first_name",
+      "last_name",
+      "gender",
+      "email",
+    ],
+  });
+
+  const meta = calculatePagination(count, page, limit);
+
+  sendResponse({
+    res,
+    message: "Orders fetched successfully",
+    data: users,
+    meta,
   });
 };

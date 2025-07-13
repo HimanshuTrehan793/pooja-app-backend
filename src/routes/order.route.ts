@@ -3,6 +3,7 @@ import { allowRoles, authenticate } from "../middlewares/auth.middleware";
 import { catchAsync } from "../utils/catchAsync";
 import {
   createOrder,
+  downloadInvoice,
   getAllOrders,
   getOrderById,
   getUserAllOrders,
@@ -33,6 +34,14 @@ router
   .get(catchAsync(authenticate), allowRoles("admin"), catchAsync(getAllOrders));
 
 router
+  .route("/download-invoice/:id")
+  .get(
+    catchAsync(authenticate),
+    schemaValidate(orderIdParamSchema, "params"),
+    catchAsync(downloadInvoice)
+  );
+
+router
   .route("/:id")
   .get(
     catchAsync(authenticate),
@@ -56,4 +65,5 @@ router.post(
   schemaValidate(verifyPaymentSchema),
   catchAsync(verifyPayment)
 );
+
 export default router;

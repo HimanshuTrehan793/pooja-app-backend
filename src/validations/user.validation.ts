@@ -39,3 +39,17 @@ export const updateEmailBodySchema = z.object({
 });
 
 export type UpdateEmailBodySchema = z.infer<typeof updateEmailBodySchema>;
+
+export const getAllUserQuerySchema = z.object({
+  page: z.preprocess((val) => Number(val), z.number().min(1).default(1)),
+  limit: z.preprocess(
+    (val) => Number(val),
+    z.number().min(1).max(100).default(30)
+  ),
+
+  phone_number: z
+    .preprocess((val) => Number(val), z.number().min(1).optional())
+    .optional(),
+});
+
+export type GetAllUsersQuery = z.infer<typeof getAllUserQuerySchema>;
