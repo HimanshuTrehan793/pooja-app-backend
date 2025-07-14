@@ -14,15 +14,19 @@ import {
   updateCategorySchema,
 } from "../validations/category.validation";
 import { catchAsync } from "../utils/catchAsync";
+import { allowRoles, authenticate } from "../middlewares/auth.middleware";
 
 const router = express.Router();
 
 router
   .route("/")
-  .get(
-    catchAsync(getAllCategories)
-  )
-  .post(schemaValidate(createCategorySchema), catchAsync(createCategory));
+  .get(catchAsync(getAllCategories))
+  .post(
+    catchAsync(authenticate),
+    allowRoles("admin"),
+    schemaValidate(createCategorySchema),
+    catchAsync(createCategory)
+  );
 
 router
   .route("/:id")
@@ -31,11 +35,15 @@ router
     catchAsync(getCategoryById)
   )
   .patch(
+    catchAsync(authenticate),
+    allowRoles("admin"),
     schemaValidate(categoryIdParamSchema, "params"),
     schemaValidate(updateCategorySchema),
     catchAsync(updateCategory)
   )
   .delete(
+    catchAsync(authenticate),
+    allowRoles("admin"),
     schemaValidate(categoryIdParamSchema, "params"),
     catchAsync(deleteCategory)
   );

@@ -21,8 +21,8 @@ router
   .route("/")
   .get(catchAsync(getAllProducts))
   .post(
-    // catchAsync(authenticate),
-    // allowRoles("admin"),
+    catchAsync(authenticate),
+    allowRoles("admin"),
     schemaValidate(createProductSchema),
     catchAsync(createProduct)
   );
@@ -34,11 +34,15 @@ router
     catchAsync(getProductById)
   )
   .patch(
+    catchAsync(authenticate),
+    allowRoles("admin"),
     schemaValidate(productIdParamSchema, "params"),
     schemaValidate(updateProductBodySchema),
     catchAsync(updateProduct)
   )
   .delete(
+    catchAsync(authenticate),
+    allowRoles("admin"),
     schemaValidate(productIdParamSchema, "params"),
     catchAsync(deleteProduct)
   );
