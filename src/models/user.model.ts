@@ -10,6 +10,7 @@ import { CartItem } from "./cart.model";
 import { Address } from "./address.model";
 import { OrderDetail } from "./orderDetail.model";
 import { OrderCoupon } from "./orderCoupon.model";
+import { ProductReview } from "./productReview.model";
 
 export class User extends Model<
   InferAttributes<User>,
@@ -23,7 +24,7 @@ export class User extends Model<
   declare email: CreationOptional<string>;
   declare refresh_token: CreationOptional<string | null>;
   declare role: CreationOptional<"user" | "admin">;
-
+  declare is_cod_eligible: CreationOptional<boolean>;
   static initModel(sequelize: Sequelize) {
     User.init(
       {
@@ -58,6 +59,11 @@ export class User extends Model<
           validate: {
             isEmail: true,
           },
+        },
+        is_cod_eligible: {
+          type: DataTypes.BOOLEAN,
+          allowNull: false,
+          defaultValue: true,
         },
         refresh_token: {
           type: DataTypes.TEXT,
@@ -104,5 +110,11 @@ export class User extends Model<
       as: "order_coupons",
       onDelete: "CASCADE",
     });
+
+    User.hasMany(ProductReview,{
+      foreignKey: "user_id",
+      as: "product_reviews",
+      onDelete: "CASCADE",
+    })
   }
 }
