@@ -161,7 +161,7 @@ export const downloadInvoicePdf = async (
     }
 
     const itemTotal = item.price * item.quantity;
-    const itemName = item.product_variant?.display_label || "Unknown Item";
+    const itemName = item.product_variant?.name || "Unknown Item";
 
     // Item details
     doc
