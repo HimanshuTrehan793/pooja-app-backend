@@ -743,10 +743,15 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
         as: "user",
         attributes: ["id", "first_name", "last_name", "email", "phone_number"],
       },
+      {
+        model: db.PaymentDetail,
+        as: "payment_details",
+        attributes: ["status", "amount", "currency", "method"],
+      },
     ],
   });
 
-  if (!order) {
+  if (!order || !order.payment_details) {
     throw new ApiError(
       "Order not found",
       HttpStatusCode.NOT_FOUND,
@@ -767,6 +772,10 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
 
     if (status === "delivered") {
       order.delivered_at = new Date();
+      if (order.payment_details) {
+        order.payment_details.status = "paid";
+        await order.payment_details.save({ transaction: tx });
+      }
     }
 
     await order.save({ transaction: tx });
