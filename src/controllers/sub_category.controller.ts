@@ -12,12 +12,15 @@ import { Op } from "sequelize";
 import { sendResponse } from "../utils/sendResponse";
 import { UpdateCategoryInput } from "../validations/category.validation";
 import { parseQueryParams } from "../utils/parseQueryParams";
+import { calculatePagination } from "../utils/pagination";
 
 export const getAllSubCategories = async (req: Request, res: Response) => {
-  const { parent_ids }: SubCategoryQueryParams = parseQueryParams(
+  const { parent_ids, page, limit, q, sort_by, sort_order } = parseQueryParams(
     getSubCategroyQuerySchema,
     req.query
-  );
+  ) as SubCategoryQueryParams;
+
+  const offset = (page - 1) * limit;
 
   let categoryIds: string[] = [];
 
@@ -59,18 +62,23 @@ export const getAllSubCategories = async (req: Request, res: Response) => {
       );
     }
 
-    const subCategories = await db.Category.findAll({
+    const { count, rows: subCategories } = await db.Category.findAndCountAll({
       where: {
         parent_id: { [Op.in]: categoryIds },
+        ...(q && { name: { [Op.iLike]: `%${q}%` } }),
       },
-      order: [["priority", "DESC"]]
+      offset,
+      limit: Number(limit),
+      order: sort_by && sort_order ? [[sort_by, sort_order]] : undefined,
     });
 
+    const meta = calculatePagination(count, Number(page), Number(limit));
+  
     sendResponse({
       res,
       message: "Subcategories fetched successfully",
       data: subCategories,
-      statusCode: HTTP_STATUS_CODES.OK,
+      meta,
     });
 
     return;

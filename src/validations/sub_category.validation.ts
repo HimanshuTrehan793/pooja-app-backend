@@ -1,8 +1,26 @@
 import { z } from "zod";
 
-export const getSubCategroyQuerySchema = z.object({
-  parent_ids: z.string().optional(),
-});
+export const getSubCategroyQuerySchema = z
+  .object({
+    parent_ids: z.string().optional(),
+    page: z.preprocess((val) => Number(val), z.number().min(1).default(1)),
+    limit: z.preprocess(
+      (val) => Number(val),
+      z.number().min(1).max(100).default(30)
+    ),
+    q: z.string().optional(),
+    sort_by: z
+      .enum(["priority", "name", "created_at", "updated_at"])
+      .optional(),
+    sort_order: z.enum(["ASC", "DESC"]).optional(),
+  })
+  .refine(
+    (data) => (data.sort_by !== undefined) === (data.sort_order !== undefined),
+    {
+      message:
+        "Both sort_by and sort_order must be provided together, or neither should be provided",
+    }
+  );
 
 export type SubCategoryQueryParams = z.infer<typeof getSubCategroyQuerySchema>;
 
