@@ -746,7 +746,7 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
       {
         model: db.PaymentDetail,
         as: "payment_details",
-        attributes: ["status", "amount", "currency", "method"],
+        attributes: ["status", "amount", "currency", "method", "id"],
       },
     ],
   });
@@ -772,7 +772,7 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
 
     if (status === "delivered") {
       order.delivered_at = new Date();
-      if (order.payment_details) {
+      if (order.payment_details && order.payment_details.method == "cod") {
         order.payment_details.status = "paid";
         await order.payment_details.save({ transaction: tx });
       }
@@ -838,7 +838,7 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
 
   sendResponse({
     res,
-    message: `Order status updated to "${status}" successfully`,
+    message: `Order status updated to ${status} successfully`,
   });
 
   return;
