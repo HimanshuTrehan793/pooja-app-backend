@@ -24,7 +24,7 @@ export const sendOtpHandler = async (req: Request, res: Response) => {
 
   const message = `Your login OTP is ${otpCode}. It is valid for ${otpExpiryMinutes} minutes.`;
 
-  await sendSMS(phone_number, message);
+  // await sendSMS(phone_number, message);
 
   await db.Otp.upsert({
     contact: phone_number,
