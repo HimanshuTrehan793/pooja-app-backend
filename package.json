@@ -6,6 +6,7 @@
     "build": "tsc",
     "start": "node dist/server.js",
     "dev": "nodemon src/server.ts",
+    "dev:debug": "nodemon --exec \"node --inspect -r ts-node/register src/server.ts\"",
     "prestart": "npm run build"
   },
   "keywords": [],
@@ -29,6 +30,7 @@
     "razorpay": "^2.9.6",
     "sequelize": "^6.37.7",
     "twilio": "^5.6.1",
+    "ua-parser-js": "^2.0.4",
     "zod": "^3.25.46"
   },
   "devDependencies": {

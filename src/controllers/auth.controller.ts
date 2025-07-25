@@ -13,6 +13,9 @@ import {
 } from "../utils/jwt";
 import { db } from "../models";
 import { runInTransaction } from "../utils/transaction";
+import * as jwt from "jsonwebtoken";
+import { VerifyOtpInput } from "../validations/auth.validation";
+import { UAParser } from "ua-parser-js";
 
 const otpExpiryMinutes = parseInt(getEnvVar("OTP_EXPIRES_IN_MINUTES"));
 
@@ -41,12 +44,14 @@ export const sendOtpHandler = async (req: Request, res: Response) => {
 };
 
 export const verifyOtpHandler = async (req: Request, res: Response) => {
-  const { phone_number, otp_code } = req.body;
+  const { phone_number, otp_code, device_info }: VerifyOtpInput = req.body;
+  const ip_address = req.ip;
+  const user_agent = req.headers["user-agent"];
 
   const existingOtp = await db.Otp.findOne({
     where: { contact: phone_number, contact_type: "phone" },
   });
-  
+
   if (!existingOtp) {
     throw new ApiError(
       "OTP not found. Please request a new one.",
@@ -87,8 +92,35 @@ export const verifyOtpHandler = async (req: Request, res: Response) => {
 
     const accessToken = generateAccessToken(user.id, phone_number, user.role);
     const refreshToken = generateRefreshToken(user.id);
+    const decodedToken = jwt.decode(refreshToken) as { exp: number };
+    const refreshTokenExpiresAt = new Date(decodedToken.exp * 1000);
 
-    await user.update({ refresh_token: refreshToken }, { transaction: tx });
+    let sessionDeviceData = {
+      browser: device_info?.browser,
+      os: device_info?.os,
+      device_type: device_info?.device_type,
+      device_name: device_info?.device_name,
+    };
+
+    if (!device_info && user_agent) {
+      const parser = new UAParser(user_agent);
+      const agentInfo = parser.getResult();
+      sessionDeviceData.browser = agentInfo.browser.name;
+      sessionDeviceData.os = agentInfo.os.name;
+      sessionDeviceData.device_type = agentInfo.device.type;
+    }
+
+    await db.UserSession.create(
+      {
+        user_id: user.id,
+        token: refreshToken,
+        expires_at: refreshTokenExpiresAt,
+        ip_address,
+        user_agent,
+        ...sessionDeviceData,
+      },
+      { transaction: tx }
+    );
 
     return { accessToken, refreshToken };
   });
@@ -129,30 +161,73 @@ export const refreshTokenHandler = async (req: Request, res: Response) => {
   }
 
   const payload = verifyRefreshToken(refreshToken);
-  const user = await db.User.findByPk(payload.sub);
 
-  if (!user || user.refresh_token !== refreshToken) {
-    throw new ApiError(
-      "Refresh token mismatch or user not found",
-      HttpStatusCode.UNAUTHORIZED,
-      "Authentication Failed"
-    );
-  }
+  const { accessToken, newRefreshToken, newRefreshTokenExpiresAt } =
+    await runInTransaction(async (tx) => {
+      const oldSession = await db.UserSession.findOne({
+        where: { token: refreshToken },
+        transaction: tx,
+      });
 
-  const accessToken = generateAccessToken(
-    user.id,
-    user.phone_number,
-    user.role
-  );
-  const newRefreshToken = generateRefreshToken(user.id);
+      if (!oldSession) {
+        throw new ApiError(
+          "Session expired or not found. Please log in again.",
+          HttpStatusCode.FORBIDDEN,
+          "Authentication Failed"
+        );
+      }
 
-  await user.update({ refresh_token: newRefreshToken });
+      const user = await db.User.findByPk(oldSession.user_id, {
+        transaction: tx,
+      });
+
+      if (!user) {
+        throw new ApiError(
+          "User not found for this session.",
+          HttpStatusCode.UNAUTHORIZED,
+          "Authentication Failed"
+        );
+      }
+
+      await oldSession.destroy({ transaction: tx });
+
+      const newAccessToken = generateAccessToken(
+        user.id,
+        user.phone_number,
+        user.role
+      );
+      const newRefreshToken = generateRefreshToken(user.id);
+
+      const decodedToken = jwt.decode(newRefreshToken) as { exp: number };
+      const newRefreshTokenExpiresAt = new Date(decodedToken.exp * 1000);
+
+      await db.UserSession.create(
+        {
+          user_id: user.id,
+          token: newRefreshToken,
+          expires_at: newRefreshTokenExpiresAt,
+          ip_address: oldSession.ip_address,
+          user_agent: oldSession.user_agent,
+          browser: oldSession.browser,
+          os: oldSession.os,
+          device_type: oldSession.device_type,
+          device_name: oldSession.device_name,
+        },
+        { transaction: tx }
+      );
+
+      return {
+        accessToken: newAccessToken,
+        newRefreshToken,
+        newRefreshTokenExpiresAt,
+      };
+    });
 
   res.cookie("refresh_token", newRefreshToken, {
     httpOnly: true,
     secure: getEnvVar("NODE_ENV") === "production",
     sameSite: "strict",
-    maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+    expires: newRefreshTokenExpiresAt,
   });
 
   sendResponse({
@@ -175,19 +250,8 @@ export const logoutHandler = async (req: Request, res: Response) => {
 
   const refreshToken = tokenFromCookie || tokenFromHeader;
 
-  if (!refreshToken) {
-    throw new ApiError(
-      "Refresh token missing",
-      HttpStatusCode.UNAUTHORIZED,
-      "Logout Failed"
-    );
-  }
-
-  const payload = verifyRefreshToken(refreshToken);
-
-  const user = await db.User.findByPk(payload.sub);
-  if (user) {
-    await user.update({ refresh_token: null });
+  if (refreshToken) {
+    await db.UserSession.destroy({ where: { token: refreshToken } });
   }
 
   res.clearCookie("refresh_token", {

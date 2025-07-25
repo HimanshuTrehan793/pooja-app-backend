@@ -8,16 +8,22 @@ const otpCodeSchema = z.string().regex(/^\d{6}$/, {
   message: `"otp_code" must be a 6-digit number`,
 });
 
-export const sendOtpSchema = z
-  .object({
-    phone_number: phoneSchema,
-  })
+export const sendOtpSchema = z.object({
+  phone_number: phoneSchema,
+});
 
-export const verifyOtpSchema = z
-  .object({
-    phone_number: phoneSchema,
-    otp_code: otpCodeSchema,
-  })
+export const verifyOtpSchema = z.object({
+  phone_number: phoneSchema,
+  otp_code: otpCodeSchema,
+  device_info: z
+    .object({
+      device_name: z.string().optional(),
+      browser: z.string().optional(),
+      os: z.string().optional(),
+      device_type: z.string().optional(),
+    })
+    .optional(),
+});
 
 export type SendOtpInput = z.infer<typeof sendOtpSchema>;
 export type VerifyOtpInput = z.infer<typeof verifyOtpSchema>;

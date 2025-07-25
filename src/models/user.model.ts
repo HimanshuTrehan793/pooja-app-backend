@@ -11,6 +11,7 @@ import { Address } from "./address.model";
 import { OrderDetail } from "./orderDetail.model";
 import { OrderCoupon } from "./orderCoupon.model";
 import { ProductReview } from "./productReview.model";
+import { UserSession } from "./userSession.model";
 
 export class User extends Model<
   InferAttributes<User>,
@@ -22,7 +23,6 @@ export class User extends Model<
   declare last_name: CreationOptional<string>;
   declare gender: CreationOptional<string>;
   declare email: CreationOptional<string>;
-  declare refresh_token: CreationOptional<string | null>;
   declare role: CreationOptional<"user" | "admin">;
   declare is_cod_eligible: CreationOptional<boolean>;
   static initModel(sequelize: Sequelize) {
@@ -65,10 +65,6 @@ export class User extends Model<
           allowNull: false,
           defaultValue: true,
         },
-        refresh_token: {
-          type: DataTypes.TEXT,
-          allowNull: true,
-        },
         role: {
           type: DataTypes.ENUM("user", "admin"),
           allowNull: false,
@@ -87,6 +83,12 @@ export class User extends Model<
   }
 
   static associate() {
+    User.hasMany(UserSession, {
+      foreignKey: "user_id",
+      as: "sessions",
+      onDelete: "CASCADE",
+    });
+
     User.hasMany(CartItem, {
       foreignKey: "user_id",
       as: "cart_items",
@@ -111,10 +113,10 @@ export class User extends Model<
       onDelete: "CASCADE",
     });
 
-    User.hasMany(ProductReview,{
+    User.hasMany(ProductReview, {
       foreignKey: "user_id",
       as: "product_reviews",
       onDelete: "CASCADE",
-    })
+    });
   }
 }
