@@ -64,7 +64,7 @@ export const downloadInvoicePdf = async (
     .fontSize(9)
     .font("Helvetica")
     .text(
-      "Star Mena Mehta Residency, Gurudwara Ln,Kumar Basti, Ameerpet, Hyderabad,Telangana 500016, India | Phone Number: +91 9000057702 | GSTIN:36BBFPR3727L1Z8",
+      "H.No 7-1-454 1st Floor,OPP GURUDWARA , NEAR SATYAM THEATER, AMEERPET HYDERABAD, 500016 India | Phone Number: +91 9000057702 | GSTIN:36BBFPR3727L1Z8",
       50,
       100,
       { align: "center", width: 500 }
