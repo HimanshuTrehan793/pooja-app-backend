@@ -15,7 +15,9 @@ export class AdBanner extends Model<
 > {
   declare id: CreationOptional<number>;
   declare image: string;
-  declare type: CreationOptional<"home" | "category">;
+  declare type: CreationOptional<
+    "home" | "category" | "mobileHome" | "mobileCategory"
+  >;
   declare action: string;
   declare configuration_id: number;
 
@@ -33,7 +35,12 @@ export class AdBanner extends Model<
           allowNull: true,
         },
         type: {
-          type: DataTypes.ENUM("home", "category"),
+          type: DataTypes.ENUM(
+            "home",
+            "category",
+            "mobileHome",
+            "mobileCategory"
+          ),
           allowNull: false,
           defaultValue: "home",
         },
