@@ -3,7 +3,7 @@ import { ApiError } from "../utils/apiError";
 import { HttpStatusCode } from "../constants/httpStatusCodes";
 import { db } from "../models";
 import { sendResponse } from "../utils/sendResponse";
-import { Op } from "sequelize";
+import { Op, WhereOptions } from "sequelize";
 import {
   CouponIdParamsSchema,
   CreateCouponSchema,
@@ -32,14 +32,63 @@ export const getAllCoupons = async (req: Request, res: Response) => {
   }
 
   const now = new Date();
+  const userId = req.user.id;
 
-  // TODO: We need to add logic for usage_limit_per_user
-  const userCoupons = await db.Coupon.findAll({
+  const existingOrder = await db.OrderDetail.findOne({
+    where: { user_id: userId },
+    attributes: ["id"],
+  });
+
+  const isNewUser = !existingOrder;
+
+  const whereClause: WhereOptions = {
+    is_active: true,
+    start_date: { [Op.lte]: now },
+    end_date: { [Op.gte]: now },
+  };
+
+  if (!isNewUser) {
+    whereClause.offer_type = { [Op.ne]: "new_user" };
+  }
+
+  const potentiallyAvailableCoupons = await db.Coupon.findAll({
+    where: whereClause,
+  });
+
+  const couponsWithUsageLimit = potentiallyAvailableCoupons.filter(
+    (c) => c.usage_limit_per_user && c.usage_limit_per_user > 0
+  );
+
+  if (couponsWithUsageLimit.length === 0) {
+    sendResponse({
+      res,
+      message: "Coupons fetched successfully",
+      data: potentiallyAvailableCoupons,
+    });
+
+    return;
+  }
+
+  const usageCounts = (await db.OrderCoupon.findAll({
+    attributes: ["coupon_id", [db.sequelize.fn("COUNT", "id"), "count"]],
     where: {
-      is_active: true,
-      start_date: { [Op.lte]: now },
-      end_date: { [Op.gte]: now },
+      user_id: userId,
+      coupon_id: { [Op.in]: couponsWithUsageLimit.map((c) => c.id) },
     },
+    group: ["coupon_id"],
+    raw: true,
+  })) as unknown as { coupon_id: string; count: string }[];
+
+  const usageCountMap = new Map(
+    usageCounts.map((uc) => [uc.coupon_id, parseInt(uc.count, 10)])
+  );
+
+  const userCoupons = potentiallyAvailableCoupons.filter((coupon) => {
+    if (!coupon.usage_limit_per_user || coupon.usage_limit_per_user <= 0) {
+      return true;
+    }
+    const usedCount = usageCountMap.get(coupon.id) || 0;
+    return usedCount < coupon.usage_limit_per_user;
   });
 
   sendResponse({

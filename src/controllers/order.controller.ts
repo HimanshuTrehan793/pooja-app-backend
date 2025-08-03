@@ -326,6 +326,14 @@ export const createOrder = async (req: Request, res: Response) => {
     );
   }
 
+  if (!configData.store_status) {
+    throw new ApiError(
+      "Store is currently closed",
+      HttpStatusCode.SERVICE_UNAVAILABLE,
+      "Please try again later"
+    );
+  }
+
   const totalCouponDiscount = couponsData?.totalCouponDiscount ?? 0;
   const totalCharges = charges
     ? charges.reduce((acc, cv) => {

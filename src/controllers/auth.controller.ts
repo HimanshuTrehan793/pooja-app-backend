@@ -22,12 +22,12 @@ const otpExpiryMinutes = parseInt(getEnvVar("OTP_EXPIRES_IN_MINUTES"));
 export const sendOtpHandler = async (req: Request, res: Response) => {
   const { phone_number } = req.body;
 
-  const otpCode = "111111";
+  const otpCode = generateOtp();
   const hashedOtp = await hashOtp(otpCode);
 
   const message = `Your login OTP is ${otpCode}. It is valid for ${otpExpiryMinutes} minutes.`;
 
-  // await sendSMS(phone_number, message);
+  await sendSMS(phone_number, message);
 
   await db.Otp.upsert({
     contact: phone_number,
