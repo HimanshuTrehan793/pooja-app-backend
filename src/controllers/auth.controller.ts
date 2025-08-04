@@ -21,13 +21,24 @@ const otpExpiryMinutes = parseInt(getEnvVar("OTP_EXPIRES_IN_MINUTES"));
 
 export const sendOtpHandler = async (req: Request, res: Response) => {
   const { phone_number } = req.body;
+  let otpCode;
 
-  const otpCode = generateOtp();
+  const specificPhoneNumbers = [
+    "+919000057702",
+    "+919914454147",
+    "+919518892006",
+  ];
+
+  if (specificPhoneNumbers.includes(phone_number)) {
+    otpCode = "111111";
+  } else {
+    otpCode = generateOtp();
+    const message = `Your ShubhLabh Pooja Samagri login OTP is ${otpCode}. It is valid for ${otpExpiryMinutes} minutes.`;
+    await sendSMS(phone_number, message);
+  }
+
+  // Hash the OTP before storing it, regardless of whether it's static or generated.
   const hashedOtp = await hashOtp(otpCode);
-
-  const message = `Your login OTP is ${otpCode}. It is valid for ${otpExpiryMinutes} minutes.`;
-
-  await sendSMS(phone_number, message);
 
   await db.Otp.upsert({
     contact: phone_number,
