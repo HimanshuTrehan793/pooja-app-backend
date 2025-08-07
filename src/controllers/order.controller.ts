@@ -922,9 +922,10 @@ export const downloadInvoice = async (req: Request, res: Response) => {
   const { id: orderId } = req.params as { id: string };
 
   const where: WhereOptions = { id: orderId };
-  where.user_id = user_id;
+  if (req.user.role === "user") {
+    where.user_id = user_id;
+  }
 
-  where.user_id = user_id;
   const includeOptions: Includeable[] = [
     {
       model: db.OrderItem,
