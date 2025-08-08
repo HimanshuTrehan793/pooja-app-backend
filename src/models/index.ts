@@ -20,6 +20,7 @@ import { PaymentDetail } from "./paymentDetail.model";
 import { OrderCharge } from "./orderCharge.model";
 import { ProductReview } from "./productReview.model";
 import { UserSession } from "./userSession.model";
+import { UserDevice } from "./userDevice.model";
 
 const env: Env = "development";
 const dbConfig = config[env];
@@ -62,6 +63,7 @@ OrderCoupon.initModel(sequelize);
 PaymentDetail.initModel(sequelize);
 OrderCharge.initModel(sequelize);
 ProductReview.initModel(sequelize);
+UserDevice.initModel(sequelize);
 
 // Setup associations
 Product.associate();
@@ -81,6 +83,7 @@ OrderCoupon.associate();
 PaymentDetail.associate();
 OrderCharge.associate();
 ProductReview.associate();
+UserDevice.associate();
 
 // Setup hooks
 ProductVariant.setupHooks();
@@ -106,4 +109,5 @@ export const db = {
   OrderCharge,
   ProductReview,
   UserSession,
+  UserDevice,
 };

@@ -12,6 +12,7 @@ import { OrderDetail } from "./orderDetail.model";
 import { OrderCoupon } from "./orderCoupon.model";
 import { ProductReview } from "./productReview.model";
 import { UserSession } from "./userSession.model";
+import { UserDevice } from "./userDevice.model";
 
 export class User extends Model<
   InferAttributes<User>,
@@ -116,6 +117,12 @@ export class User extends Model<
     User.hasMany(ProductReview, {
       foreignKey: "user_id",
       as: "product_reviews",
+      onDelete: "CASCADE",
+    });
+
+    User.hasMany(UserDevice, {
+      foreignKey: "user_id",
+      as: "devices",
       onDelete: "CASCADE",
     });
   }

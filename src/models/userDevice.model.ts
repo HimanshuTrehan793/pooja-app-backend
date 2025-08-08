@@ -1,0 +1,53 @@
+import {
+  CreationOptional,
+  DataTypes,
+  ForeignKey,
+  InferAttributes,
+  InferCreationAttributes,
+  Model,
+  Sequelize,
+} from "sequelize";
+import { User } from "./user.model";
+
+export class UserDevice extends Model<
+  InferAttributes<UserDevice>,
+  InferCreationAttributes<UserDevice>
+> {
+  declare id: CreationOptional<string>;
+  declare user_id: ForeignKey<User["id"]>;
+  declare device_token: string;
+  declare device_type: "android" | "ios" | "web";
+
+  static initModel(sequelize: Sequelize) {
+    UserDevice.init(
+      {
+        id: {
+          type: DataTypes.UUID,
+          defaultValue: DataTypes.UUIDV4,
+          primaryKey: true,
+        },
+        device_token: {
+          type: DataTypes.TEXT,
+          allowNull: false,
+          unique: true,
+        },
+        device_type: {
+          type: DataTypes.ENUM("android", "ios", "web"),
+          allowNull: false,
+        },
+      },
+      {
+        sequelize,
+        tableName: "user_devices",
+        timestamps: true,
+        underscored: true,
+      }
+    );
+  }
+
+  static associate() {
+    UserDevice.belongsTo(User, {
+      foreignKey: "user_id",
+    });
+  }
+}
