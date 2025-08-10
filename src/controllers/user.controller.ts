@@ -223,7 +223,7 @@ export const getAllusers = async (req: Request, res: Response) => {
     );
   }
 
-  const { page, limit, phone_number } = parseQueryParams(
+  const { page, limit, phone_number, sort_order } = parseQueryParams(
     getAllUserQuerySchema,
     req.query
   ) as GetAllUsersQuery;
@@ -247,7 +247,9 @@ export const getAllusers = async (req: Request, res: Response) => {
       "last_name",
       "gender",
       "email",
+      "createdAt",
     ],
+    order: [["createdAt", sort_order]],
   });
 
   const meta = calculatePagination(count, page, limit);

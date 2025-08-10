@@ -50,6 +50,7 @@ export const getAllUserQuerySchema = z.object({
   phone_number: z
     .preprocess((val) => Number(val), z.number().min(1).optional())
     .optional(),
+  sort_order: z.enum(["ASC", "DESC"]).optional().default("DESC"),
 });
 
 export type GetAllUsersQuery = z.infer<typeof getAllUserQuerySchema>;
