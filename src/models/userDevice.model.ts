@@ -17,6 +17,7 @@ export class UserDevice extends Model<
   declare user_id: ForeignKey<User["id"]>;
   declare device_token: string;
   declare device_type: "android" | "ios" | "web";
+  declare is_active: CreationOptional<boolean>;
 
   static initModel(sequelize: Sequelize) {
     UserDevice.init(
@@ -34,6 +35,11 @@ export class UserDevice extends Model<
         device_type: {
           type: DataTypes.ENUM("android", "ios", "web"),
           allowNull: false,
+        },
+        is_active: {
+          type: DataTypes.BOOLEAN,
+          allowNull: false,
+          defaultValue: true,
         },
       },
       {

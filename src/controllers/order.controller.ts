@@ -27,6 +27,7 @@ import { createHmac } from "crypto";
 import { Includeable, Op, Order, WhereOptions } from "sequelize";
 import { sendEmail } from "../services/email.service";
 import { downloadInvoicePdf } from "../services/pdf.service";
+import { dispatchOrderStatusNotification } from "../services/notification.service";
 
 const validateOrderItems = async (items: CreateOrderBody["items"]) => {
   const quantityMap = new Map(
@@ -799,6 +800,10 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
     );
   });
 
+  if (order.user?.id) {
+    await dispatchOrderStatusNotification(order.user.id, status, order);
+  }
+
   if (order.user?.email) {
     const subject = `Update on your order #${order.order_number}`;
     const html = `
@@ -834,7 +839,7 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
         <p style="font-size: 12px; color: #888;">
           If you have any questions, please reply to this email.
           <br>
-          &copy; ${new Date().getFullYear()} Your Company Name
+          &copy; ${new Date().getFullYear()} Shubhlabh Pooja Samagri.
         </p>
         
       </div>
@@ -866,6 +871,13 @@ export const cancelOrder = async (req: Request, res: Response) => {
 
   const order = await db.OrderDetail.findOne({
     where: { id: orderId, user_id: req.user.id },
+    include: [
+      {
+        model: db.User,
+        as: "user",
+        attributes: ["id", "first_name", "last_name", "email", "phone_number"],
+      },
+    ],
   });
 
   if (!order) {
@@ -898,6 +910,10 @@ export const cancelOrder = async (req: Request, res: Response) => {
       { transaction: tx }
     );
   });
+
+  if (order.user?.id) {
+    await dispatchOrderStatusNotification(order.user.id, "cancelled", order);
+  }
 
   sendResponse({
     res,
