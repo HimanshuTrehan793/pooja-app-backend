@@ -17,6 +17,17 @@ export const getProductsQuerySchema = z.object({
   category_id: z.string().uuid().optional(),
 });
 
+export const searchProductsQuerySchema = z.object({
+  q: z.string().min(1, "Search query is required"),
+  page: z.preprocess((val) => Number(val), z.number().min(1).default(1)),
+  limit: z.preprocess(
+    (val) => Number(val),
+    z.number().min(1).max(100).default(30)
+  ),
+});
+
+export type SearchProductsQueryParams = z.infer<typeof searchProductsQuerySchema>;
+
 export type ProductQueryParams = z.infer<typeof getProductsQuerySchema>;
 
 export const productVariantSchema = z

@@ -4,6 +4,7 @@ import {
   deleteProduct,
   getAllProducts,
   getProductById,
+  searchProducts,
   updateProduct,
 } from "../controllers/product.controller";
 import {
@@ -26,6 +27,8 @@ router
     schemaValidate(createProductSchema),
     catchAsync(createProduct)
   );
+
+router.route("/search").get(catchAsync(searchProducts));
 
 router
   .route("/:id")

@@ -9,6 +9,8 @@ import {
   getProductsQuerySchema,
   ProductIdParam,
   ProductQueryParams,
+  SearchProductsQueryParams,
+  searchProductsQuerySchema,
   UpdateProductPatchBody,
 } from "../validations/product.validation";
 import { sendResponse } from "../utils/sendResponse";
@@ -16,12 +18,9 @@ import { ApiError } from "../utils/apiError";
 import { db } from "../models";
 import { runInTransaction } from "../utils/transaction";
 import { parseQueryParams } from "../utils/parseQueryParams";
+import { Product } from "../models/product.model";
 
-export const getAllProducts = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
+export const getAllProducts = async (req: Request, res: Response) => {
   const { page, limit, q, brand_name, price_min, price_max, category_id } =
     parseQueryParams(getProductsQuerySchema, req.query) as ProductQueryParams;
 
@@ -65,6 +64,60 @@ export const getAllProducts = async (
   });
 
   const meta = calculatePagination(count, Number(page), Number(limit));
+
+  sendResponse({
+    res,
+    message: "Products with variants fetched successfully",
+    data: products,
+    meta,
+  });
+};
+
+export const searchProducts = async (req: Request, res: Response) => {
+  const { q, limit, page } = parseQueryParams(
+    searchProductsQuerySchema,
+    req.query
+  ) as SearchProductsQueryParams;
+
+  const offset = (page - 1) * limit;
+  const whereVariant: WhereOptions<ProductVariant> = q
+    ? { name: { [Op.iLike]: `%${q}%` } }
+    : {};
+
+  let products: Product[] = [];
+
+  const totalCount = await db.ProductVariant.count({
+    where: whereVariant,
+    distinct: true,
+    col: "product_id",
+  });
+
+  if (totalCount > offset) {
+    const productIdRows = (await db.ProductVariant.findAll({
+      where: whereVariant,
+      attributes: [
+        [
+          db.sequelize.fn("DISTINCT", db.sequelize.col("product_id")),
+          "product_id",
+        ],
+      ],
+      order: [["product_id", "ASC"]],
+      limit,
+      offset,
+      raw: true,
+    })) as { product_id: string }[];
+
+    const productIds = productIdRows.map((row) => row.product_id);
+
+    if (productIds.length > 0) {
+      products = await db.Product.findAll({
+        where: { id: { [Op.in]: productIds } },
+        include: [{ model: ProductVariant, as: "product_variants" }],
+      });
+    }
+  }
+
+  const meta = calculatePagination(totalCount, Number(page), Number(limit));
 
   sendResponse({
     res,
@@ -146,7 +199,6 @@ export const createProduct = async (req: Request, res: Response) => {
   return;
 };
 
-
 export const getProductById = async (req: Request, res: Response) => {
   const { id } = req.params as ProductIdParam;
 
@@ -158,7 +210,6 @@ export const getProductById = async (req: Request, res: Response) => {
       "not found"
     );
   }
-
 
   const updatedVariants = await ProductVariant.findAll({
     where: {
