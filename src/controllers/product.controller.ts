@@ -111,7 +111,7 @@ export const searchProducts = async (req: Request, res: Response) => {
       include: productInclude,
       limit,
       offset,
-      order: [["createdAt", "DESC"]],
+      order: [["createdAt", "ASC"]],
       distinct: true,
     });
 
