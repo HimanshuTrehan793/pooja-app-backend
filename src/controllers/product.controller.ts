@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from "express";
+import { Request, Response } from "express";
 
 import { Op, WhereOptions } from "sequelize";
 import { ProductVariant } from "../models/productVariant.model";
@@ -74,7 +74,7 @@ export const getAllProducts = async (req: Request, res: Response) => {
 };
 
 export const searchProducts = async (req: Request, res: Response) => {
-  const { q, limit, page } = parseQueryParams(
+  const { q, limit, page, category_ids } = parseQueryParams(
     searchProductsQuerySchema,
     req.query
   ) as SearchProductsQueryParams;
@@ -84,10 +84,23 @@ export const searchProducts = async (req: Request, res: Response) => {
     ? { name: { [Op.iLike]: `%${q}%` } }
     : {};
 
+  const includeOptions = [];
+  if (category_ids && category_ids.length > 0) {
+    includeOptions.push({
+      model: db.Category,
+      as: "categories",
+      where: { id: { [Op.in]: category_ids } },
+      attributes: [],
+      through: { attributes: [] },
+      required: true,
+    });
+  }
+
   let products: Product[] = [];
 
   const totalCount = await db.ProductVariant.count({
     where: whereVariant,
+    include: includeOptions,
     distinct: true,
     col: "product_id",
   });
@@ -95,6 +108,7 @@ export const searchProducts = async (req: Request, res: Response) => {
   if (totalCount > offset) {
     const productIdRows = (await db.ProductVariant.findAll({
       where: whereVariant,
+      include: includeOptions,
       attributes: [
         [
           db.sequelize.fn("DISTINCT", db.sequelize.col("product_id")),
