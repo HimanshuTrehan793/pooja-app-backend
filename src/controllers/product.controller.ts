@@ -80,56 +80,40 @@ export const searchProducts = async (req: Request, res: Response) => {
   ) as SearchProductsQueryParams;
 
   const offset = (page - 1) * limit;
+
   const whereVariant: WhereOptions<ProductVariant> = q
     ? { name: { [Op.iLike]: `%${q}%` } }
     : {};
 
-  const includeOptions = [];
-  if (category_ids && category_ids.length > 0) {
-    includeOptions.push({
-      model: db.Category,
-      as: "categories",
-      where: { id: { [Op.in]: category_ids } },
-      attributes: [],
-      through: { attributes: [] },
-      required: true,
-    });
-  }
+  const categoryInclude =
+    category_ids && category_ids.length > 0
+      ? {
+          model: db.Category,
+          as: "categories",
+          where: { id: { [Op.in]: category_ids } },
+          attributes: [],
+          through: { attributes: [] },
+        }
+      : null;
 
-  let products: Product[] = [];
-
-  const totalCount = await db.ProductVariant.count({
-    where: whereVariant,
-    include: includeOptions,
-    distinct: true,
-    col: "product_id",
-  });
-
-  if (totalCount > offset) {
-    const productIdRows = (await db.ProductVariant.findAll({
+  const productInclude = [
+    {
+      model: db.ProductVariant,
+      as: "product_variants",
       where: whereVariant,
-      include: includeOptions,
-      attributes: [
-        [
-          db.sequelize.fn("DISTINCT", db.sequelize.col("product_id")),
-          "product_id",
-        ],
-      ],
-      order: [["product_id", "ASC"]],
+      required: true,
+      include: categoryInclude ? [categoryInclude] : [],
+    },
+  ];
+
+  const { count: totalCount, rows: products } =
+    await db.Product.findAndCountAll({
+      include: productInclude,
       limit,
       offset,
-      raw: true,
-    })) as { product_id: string }[];
-
-    const productIds = productIdRows.map((row) => row.product_id);
-
-    if (productIds.length > 0) {
-      products = await db.Product.findAll({
-        where: { id: { [Op.in]: productIds } },
-        include: [{ model: ProductVariant, as: "product_variants" }],
-      });
-    }
-  }
+      order: [["createdAt", "DESC"]],
+      distinct: true,
+    });
 
   const meta = calculatePagination(totalCount, Number(page), Number(limit));
 
