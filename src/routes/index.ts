@@ -14,6 +14,7 @@ import mapRoutes from "./map.route";
 import userRoutes from "./user.route";
 import orderRoutes from "./order.route";
 import deviceRoutes from "./device.route";
+import accountRoutes from "./account.route";
 
 const router = Router();
 
@@ -31,5 +32,6 @@ router.use("/api/users", userRoutes);
 router.use("/api/coupons", couponRoutes);
 router.use("/api/orders", orderRoutes);
 router.use("/api/devices", deviceRoutes);
+router.use("/api/accounts", accountRoutes);
 
 export default router;
