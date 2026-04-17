@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { sendSMS } from "../services/sms.service";
+import { sendOtp } from "../services/sms.service";
 import { compareOtp, hashOtp } from "../utils/hash";
 import { generateOtp } from "../utils/generateOtp";
 import { getEnvVar } from "../utils/getEnvVar";
@@ -33,8 +33,7 @@ export const sendOtpHandler = async (req: Request, res: Response) => {
     otpCode = "111111";
   } else {
     otpCode = generateOtp();
-    const message = `Your ShubhLabh Pooja Samagri login OTP is ${otpCode}. It is valid for ${otpExpiryMinutes} minutes.`;
-    await sendSMS(phone_number, message);
+    await sendOtp(phone_number, otpCode);
   }
 
   // Hash the OTP before storing it, regardless of whether it's static or generated.

@@ -338,8 +338,8 @@ export const createOrder = async (req: Request, res: Response) => {
   const totalCouponDiscount = couponsData?.totalCouponDiscount ?? 0;
   const totalCharges = charges
     ? charges.reduce((acc, cv) => {
-        return acc + cv.amount;
-      }, 0)
+      return acc + cv.amount;
+    }, 0)
     : 0;
   const finalAmount = Math.max(
     0,
@@ -464,6 +464,34 @@ export const createOrder = async (req: Request, res: Response) => {
 
     return RazorpayOrder;
   });
+  const html = `
+    <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+      <div style="max-width: 580px; margin: 20px auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px;">
+        
+        <h1 style="font-size: 22px; margin-top: 0;">You got a new order</h1>
+        
+        <p>Hi Yesh you received an order</p>
+        
+        
+    }</p>
+        
+       
+    }
+        
+        <p style="margin-top: 25px;">Thank you for shopping with us!</p>
+        
+        <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+        
+        <p style="font-size: 12px; color: #888;">
+          If you have any questions, please reply to this email.
+          <br>
+          &copy; ${new Date().getFullYear()} Shubhlabh Pooja Samagri.
+        </p>
+        
+      </div>
+    </div>
+  `;
+   sendEmail("shubhlabhonline2025@gmail.com", `You received an order from the ${validatedAddress.phone_number}`, html);
 
   sendResponse({
     res,
@@ -814,23 +842,20 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
         
         <p>Hi ${order.user.first_name || "Valued Customer"},</p>
         
-        <p>Your order <strong>#${
-          order.order_number + 1000
-        }</strong> has been updated.</p>
+        <p>Your order <strong>#${order.order_number + 1000
+      }</strong> has been updated.</p>
         
-        <p><strong>New Status:</strong> ${
-          status.charAt(0).toUpperCase() + status.slice(1).replace(/_/g, " ")
-        }</p>
+        <p><strong>New Status:</strong> ${status.charAt(0).toUpperCase() + status.slice(1).replace(/_/g, " ")
+      }</p>
         
-        ${
-          comment
-            ? `
+        ${comment
+        ? `
           <div style="background-color: #f7f7f7; padding: 15px; border-radius: 4px; margin-top: 15px;">
             <p style="margin: 0;"><strong>A note from our team:</strong><br>${comment}</p>
           </div>
         `
-            : ""
-        }
+        : ""
+      }
         
         <p style="margin-top: 25px;">Thank you for shopping with us!</p>
         
@@ -917,9 +942,8 @@ export const cancelOrder = async (req: Request, res: Response) => {
 
   sendResponse({
     res,
-    message: `Order with ID ${
-      order.order_number + 1000
-    } has been cancelled successfully`,
+    message: `Order with ID ${order.order_number + 1000
+      } has been cancelled successfully`,
   });
 
   return;
