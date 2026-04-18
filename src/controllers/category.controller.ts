@@ -31,7 +31,7 @@ export const getAllCategories = async (req: Request, res: Response) => {
     where,
     offset,
     limit: Number(limit),
-    order: sort_by && sort_order ? [[sort_by, sort_order]] : ["priority","DESC"],
+    order: [["priority", "DESC"]],
   });
 
   const meta = calculatePagination(count, Number(page), Number(limit));
