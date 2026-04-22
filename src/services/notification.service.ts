@@ -35,6 +35,19 @@ export const sendMessageToQueue = async (message: string) => {
   }
 };
 
+export const sendBroadcastNotification = async (
+  title: string,
+  body: string,
+  data: Record<string, string> = {}
+) => {
+  const job = {
+    type: "broadcast",
+    message: { title, body },
+    data,
+  };
+  await sendMessageToQueue(JSON.stringify(job));
+};
+
 type OrderStatus = keyof typeof orderStatusTemplates;
 
 export const dispatchOrderStatusNotification = async (

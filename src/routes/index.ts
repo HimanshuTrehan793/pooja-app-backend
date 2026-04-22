@@ -15,6 +15,7 @@ import userRoutes from "./user.route";
 import orderRoutes from "./order.route";
 import deviceRoutes from "./device.route";
 import accountRoutes from "./account.route";
+import notificationRoutes from "./notification.route";
 
 const router = Router();
 
@@ -33,5 +34,6 @@ router.use("/api/coupons", couponRoutes);
 router.use("/api/orders", orderRoutes);
 router.use("/api/devices", deviceRoutes);
 router.use("/api/accounts", accountRoutes);
+router.use("/api/notifications", notificationRoutes);
 
 export default router;
