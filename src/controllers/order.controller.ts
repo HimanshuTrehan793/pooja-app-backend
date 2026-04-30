@@ -28,6 +28,7 @@ import { Includeable, Op, Order, WhereOptions } from "sequelize";
 import { sendEmail } from "../services/email.service";
 import { downloadInvoicePdf } from "../services/pdf.service";
 import { dispatchOrderStatusNotification } from "../services/notification.service";
+import { dispatchOrderStatusWhatsApp } from "../services/whatsapp.service";
 
 const validateOrderItems = async (items: CreateOrderBody["items"]) => {
   const quantityMap = new Map(
@@ -832,6 +833,10 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
     await dispatchOrderStatusNotification(order.user.id, status, order);
   }
 
+  if (order.user?.phone_number) {
+    await dispatchOrderStatusWhatsApp(status, order);
+  }
+
   if (order.user?.email) {
     const subject = `Update on your order #${order.order_number}`;
     const html = `
@@ -938,6 +943,10 @@ export const cancelOrder = async (req: Request, res: Response) => {
 
   if (order.user?.id) {
     await dispatchOrderStatusNotification(order.user.id, "cancelled", order);
+  }
+
+  if (order.user?.phone_number) {
+    await dispatchOrderStatusWhatsApp("cancelled", order);
   }
 
   sendResponse({

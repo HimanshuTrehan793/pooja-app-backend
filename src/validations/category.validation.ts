@@ -46,17 +46,14 @@ export const updateCategorySchema = z
       .number()
       .positive("Priority must be a positive number")
       .finite("Priority must be a finite number")
-      .refine(
-        (val) => {
-          const decimalPart = val.toString().split(".")[1];
-          return !decimalPart || decimalPart.length <= 10;
-        },
-        { message: "Priority can have at most 10 decimal places" }
-      )
       .refine((val) => val <= 9999999999.9999999999, {
         message:
           "Priority exceeds maximum allowed value (9999999999.9999999999)",
       })
+      // DB column is DECIMAL(20, 10). Round client-side float noise so values
+      // like 30212.82958984375 don't get rejected — Postgres would round
+      // them anyway.
+      .transform((val) => Math.round(val * 1e10) / 1e10)
       .optional(),
   })
   .strict()

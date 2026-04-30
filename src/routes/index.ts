@@ -16,6 +16,7 @@ import orderRoutes from "./order.route";
 import deviceRoutes from "./device.route";
 import accountRoutes from "./account.route";
 import notificationRoutes from "./notification.route";
+import analyticsRoutes from "./analytics.route";
 
 const router = Router();
 
@@ -35,5 +36,6 @@ router.use("/api/orders", orderRoutes);
 router.use("/api/devices", deviceRoutes);
 router.use("/api/accounts", accountRoutes);
 router.use("/api/notifications", notificationRoutes);
+router.use("/api/analytics", analyticsRoutes);
 
 export default router;
