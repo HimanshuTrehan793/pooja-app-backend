@@ -6,8 +6,9 @@ import { HTTP_STATUS_CODES } from "../constants/httpsStatusCodes";
 
 /**
  * Revenue definition (per product spec):
- *   revenue = SUM(order_items.price * order_items.quantity)
- *   Excludes: delivery charges, coupon discounts.
+ *   revenue = SUM(order_items.price * order_items.quantity) + delivery charges
+ *   Includes: delivery charges (order_charges.type = 'delivery').
+ *   Excludes: coupon discounts.
  *   Excludes orders in: cancelled, rejected, refunded, returned.
  *
  * Orders Received (graph + KPI) = COUNT of all orders placed in range,
@@ -44,7 +45,12 @@ export const getSalesSummary = async (req: Request, res: Response) => {
         od.id,
         od.created_at,
         od.status,
-        COALESCE(SUM(oi.price * oi.quantity), 0) AS items_total
+        COALESCE(SUM(oi.price * oi.quantity), 0) AS items_total,
+        COALESCE((
+          SELECT SUM(oc.amount)
+          FROM order_charges oc
+          WHERE oc.order_id = od.id AND oc.type = 'delivery'
+        ), 0) AS delivery_total
       FROM order_details od
       LEFT JOIN order_items oi ON oi.order_id = od.id
       WHERE od.created_at BETWEEN :from AND :to
@@ -54,7 +60,7 @@ export const getSalesSummary = async (req: Request, res: Response) => {
       to_char(date_trunc('day', created_at), 'YYYY-MM-DD') AS date,
       COUNT(*)::int AS orders,
       COALESCE(SUM(
-        CASE WHEN status NOT IN (:excluded) THEN items_total ELSE 0 END
+        CASE WHEN status NOT IN (:excluded) THEN items_total + delivery_total ELSE 0 END
       ), 0)::float AS revenue
     FROM order_totals
     GROUP BY date_trunc('day', created_at)
@@ -105,7 +111,12 @@ export const getTopCustomers = async (req: Request, res: Response) => {
         od.id,
         od.user_id,
         od.status,
-        COALESCE(SUM(oi.price * oi.quantity), 0) AS items_total
+        COALESCE(SUM(oi.price * oi.quantity), 0) AS items_total,
+        COALESCE((
+          SELECT SUM(oc.amount)
+          FROM order_charges oc
+          WHERE oc.order_id = od.id AND oc.type = 'delivery'
+        ), 0) AS delivery_total
       FROM order_details od
       LEFT JOIN order_items oi ON oi.order_id = od.id
       WHERE od.created_at BETWEEN :from AND :to
@@ -119,7 +130,7 @@ export const getTopCustomers = async (req: Request, res: Response) => {
       u.email,
       COUNT(ot.id)::int AS order_count,
       COALESCE(SUM(
-        CASE WHEN ot.status NOT IN (:excluded) THEN ot.items_total ELSE 0 END
+        CASE WHEN ot.status NOT IN (:excluded) THEN ot.items_total + ot.delivery_total ELSE 0 END
       ), 0)::float AS total_spent
     FROM order_totals ot
     JOIN users u ON u.id = ot.user_id
